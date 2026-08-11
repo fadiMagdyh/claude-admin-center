@@ -1,0 +1,1088 @@
+<title>Claude Admin Center — UI prototype (ticket #5)</title>
+<!--
+  PROTOTYPE — THROWAWAY. Do not promote to production.
+  Answers wayfinder ticket #5: "What should the dashboard look and feel like?"
+  Plan: three structurally different variants of the Claude Admin Center shell,
+  switchable via ?variant=A|B|C and the floating bottom bar (or ← / → keys).
+    A — Console:      left sidebar, dense tables, advisor in a right drawer, Activity as its own section.
+    B — Overview:     summary-card home with drill-ins, persistent Activity rail, advisor expands inline.
+    C — Command deck: always-dark top-tab terminal, Activity ticker, advisor as a queued tray.
+    D — HUD:          Stark-style holographic landing page — ring gauge, glowing modules, advisor orb.
+  All data is mock. No persistence, no real readers.
+-->
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --accent: #2a78d6;
+    --accent-soft: rgba(42, 120, 214, 0.10);
+    --advisor: #4a3aa7;
+    --advisor-soft: rgba(74, 58, 167, 0.08);
+    --good: #0ca30c;
+    --good-text: #006300;
+    --warn: #fab219;
+    --serious: #ec835a;
+    --crit: #d03b3b;
+    --s1: #2a78d6;
+    --s2: #eb6834;
+    --s3: #1baf7a;
+    --s4: #eda100;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #ffffff;
+      --ink2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --accent: #3987e5;
+      --accent-soft: rgba(57, 135, 229, 0.14);
+      --advisor: #9085e9;
+      --advisor-soft: rgba(144, 133, 233, 0.12);
+      --good-text: #0ca30c;
+      --s1: #3987e5;
+      --s2: #d95926;
+      --s3: #199e70;
+      --s4: #c98500;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --accent: #3987e5;
+    --accent-soft: rgba(57, 135, 229, 0.14);
+    --advisor: #9085e9;
+    --advisor-soft: rgba(144, 133, 233, 0.12);
+    --good-text: #0ca30c;
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --s4: #c98500;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; padding: 0; }
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+  a { color: var(--accent); text-decoration: none; }
+  h1, h2, h3 { margin: 0; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
+  /* ---------- shared bits ---------- */
+  .mono { font-family: var(--mono); }
+  .muted { color: var(--muted); }
+  .num { font-variant-numeric: tabular-nums; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10.5px; font-weight: 600; letter-spacing: 0.03em;
+    padding: 1px 7px; border-radius: 999px; border: 1px solid var(--border);
+    color: var(--ink2); white-space: nowrap; vertical-align: middle;
+  }
+  .badge.live { color: var(--good-text); border-color: currentColor; }
+  .badge.live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--good); }
+  .badge.orphan { color: var(--serious); border-color: currentColor; }
+  .badge.gc { color: var(--muted); border-style: dashed; }
+  .badge.longctx { color: var(--accent); border-color: currentColor; }
+  .dot-on, .dot-off { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+  .dot-on { background: var(--good); }
+  .dot-off { background: transparent; border: 1.5px solid var(--muted); }
+
+  .ask-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 7px; color: var(--advisor);
+    border: 1px solid transparent;
+  }
+  .ask-btn:hover { background: var(--advisor-soft); border-color: var(--advisor); }
+  .ask-btn.busy svg { animation: spin 1.2s linear infinite; }
+  .ask-btn-wide {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 14px; border-radius: 8px; font-weight: 600; font-size: 13px;
+    color: var(--advisor); border: 1px solid var(--advisor); background: var(--advisor-soft);
+  }
+  .checked-at { font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--advisor-soft); border-top-color: var(--advisor);
+    animation: spin 0.9s linear infinite;
+  }
+  .skeleton { height: 10px; border-radius: 5px; background: var(--grid); margin: 10px 0; animation: pulse 1.2s ease-in-out infinite alternate; }
+  @keyframes pulse { from { opacity: 0.5; } to { opacity: 1; } }
+
+  .rec { border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; background: var(--surface); }
+  .rec + .rec { margin-top: 8px; }
+  .rec h4 { margin: 0 0 3px; font-size: 13px; font-weight: 600; }
+  .rec p { margin: 0; font-size: 12.5px; color: var(--ink2); }
+  .sev { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 5px; }
+  .sev .ic { font-family: var(--mono); font-weight: 700; }
+  .sev.serious { color: var(--serious); }
+  .sev.warn { color: color-mix(in srgb, var(--warn) 70%, var(--ink)); }
+  .sev.good { color: var(--good-text); }
+  .adv-history { border-top: 1px solid var(--border); margin-top: 14px; padding-top: 10px; font-size: 12px; }
+  .adv-history .row { display: flex; justify-content: space-between; padding: 3px 0; color: var(--ink2); }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .tile .lbl { font-size: 10.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+  .tile .val { font-size: 25px; font-weight: 650; margin-top: 2px; }
+  .tile .sub { font-size: 11.5px; color: var(--ink2); margin-top: 1px; }
+  .tile .up { color: var(--good-text); }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .card-head h3 { font-size: 13.5px; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; color: var(--ink2); }
+  .legend .chip { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .sw { width: 11px; height: 11px; border-radius: 3px; }
+  .chart-scroll { overflow-x: auto; }
+  .ghost-btn { font-size: 12px; color: var(--ink2); border: 1px solid var(--border); border-radius: 7px; padding: 3px 10px; }
+  .ghost-btn:hover, .ghost-btn.on { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+  .pills { display: flex; gap: 6px; }
+  .pill { font-size: 12px; padding: 3px 11px; border-radius: 999px; border: 1px solid var(--border); color: var(--ink2); }
+  .pill.on { background: var(--ink); color: var(--page); border-color: var(--ink); font-weight: 600; }
+
+  .hbar-row { display: grid; grid-template-columns: 88px 1fr 76px; align-items: center; gap: 10px; padding: 5px 0; font-size: 12.5px; }
+  .hbar-track { height: 14px; }
+  .hbar { height: 14px; border-radius: 0 4px 4px 0; min-width: 2px; }
+  .hbar-val { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
+
+  .stub { padding: 60px 20px; text-align: center; color: var(--muted); }
+  .stub b { color: var(--ink2); }
+
+  #tooltip {
+    position: fixed; z-index: 90; pointer-events: none; display: none;
+    background: var(--ink); color: var(--page); font-size: 11.5px; line-height: 1.35;
+    padding: 5px 9px; border-radius: 6px; max-width: 260px;
+  }
+
+  /* ---------- proto switcher bar (not part of the design) ---------- */
+  #proto-bar {
+    position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 100;
+    display: flex; align-items: center; gap: 4px;
+    background: var(--ink); color: var(--page);
+    border-radius: 999px; padding: 5px 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    font-size: 12.5px;
+  }
+  #proto-bar button { color: inherit; padding: 2px 9px; border-radius: 999px; font-weight: 700; }
+  #proto-bar button:hover { background: rgba(128,128,128,0.35); }
+  #proto-bar .plabel { padding: 0 6px; min-width: 240px; text-align: center; }
+  #proto-bar .pkeys { opacity: 0.55; font-size: 10.5px; padding-right: 4px; }
+  body:has(.vc) #proto-bar { bottom: 46px; }
+
+  /* =========================================================
+     VARIANT A — Console: sidebar + dense tables + right drawer
+     ========================================================= */
+  .va { display: grid; grid-template-columns: 218px 1fr; min-height: 100vh; }
+  .va-side { background: var(--surface); border-right: 1px solid var(--border); padding: 16px 10px; display: flex; flex-direction: column; gap: 2px; position: sticky; top: 0; height: 100vh; }
+  .va-brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13.5px; padding: 2px 10px 14px; }
+  .va-brand .glyph { color: var(--advisor); }
+  .va-nav { display: flex; align-items: center; gap: 9px; padding: 6px 10px; border-radius: 7px; font-size: 13px; color: var(--ink2); width: 100%; text-align: left; }
+  .va-nav svg { flex: none; opacity: 0.75; }
+  .va-nav:hover { background: var(--accent-soft); }
+  .va-nav.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .va-side .foot { margin-top: auto; font-size: 10.5px; color: var(--muted); padding: 10px; border-top: 1px solid var(--border); }
+  .va-main { padding: 22px 28px 80px; max-width: 1060px; }
+  .va-pagehead { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; }
+  .va-pagehead h1 { font-size: 19px; }
+  .va table th { text-align: left; font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+  .va table td { padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+  .va tr[data-act] { cursor: pointer; }
+  .va tbody tr:hover { background: var(--accent-soft); }
+  .va .obj-name { font-weight: 600; }
+  .va .obj-path { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .va-back { font-size: 12.5px; display: inline-block; margin-bottom: 10px; }
+  .va-detailhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+  .va-section { margin-top: 22px; }
+  .va-section > h2 { font-size: 13.5px; margin-bottom: 8px; }
+  .enab-row { display: flex; align-items: center; padding: 7px 2px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .enab-row .scope { margin-left: auto; font-size: 11px; color: var(--muted); }
+  .va-drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 390px; z-index: 60;
+    background: var(--surface); border-left: 1px solid var(--border);
+    box-shadow: -12px 0 30px rgba(0,0,0,0.12); padding: 18px 20px; overflow-y: auto;
+  }
+  .va-drawer .dhead { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }
+  .va-drawer .dhead .x { margin-left: auto; font-size: 17px; color: var(--muted); padding: 2px 8px; }
+  .va-drawer .dhead .x:hover { color: var(--ink); }
+
+  /* =========================================================
+     VARIANT B — Overview-first: cards + drill-ins + activity rail
+     ========================================================= */
+  .vb-top { display: flex; align-items: center; gap: 18px; padding: 12px 24px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 40; }
+  .vb-top .brand { font-weight: 700; font-size: 14px; display: flex; gap: 8px; align-items: center; }
+  .vb-top .brand .glyph { color: var(--advisor); }
+  .vb-search { flex: 1; max-width: 420px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 8px; padding: 5px 12px; color: var(--muted); font-size: 13px; background: var(--page); }
+  .vb-top .root { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .vb-body { display: grid; grid-template-columns: 1fr 300px; gap: 0; align-items: start; }
+  .vb-content { padding: 22px 26px 90px; max-width: 980px; }
+  .vb-rail { border-left: 1px solid var(--border); background: var(--surface); min-height: calc(100vh - 49px); padding: 16px 16px 80px; position: sticky; top: 49px; }
+  .vb-rail h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); display: flex; align-items: center; gap: 7px; margin-bottom: 10px; }
+  .vb-rail h3 .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--good); animation: pulse 1.4s ease-in-out infinite alternate; }
+  .act-item { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+  .act-item .meta { display: flex; gap: 8px; font-size: 10.5px; color: var(--muted); margin-bottom: 2px; font-family: var(--mono); }
+  .act-item .meta .proj { color: var(--accent); }
+  .act-item .q { color: var(--ink2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .crumbs { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; }
+  .vb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .vb-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: left; display: block; width: 100%; }
+  .vb-card:hover { border-color: var(--accent); }
+  .vb-card .t { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 7px; }
+  .vb-card .big { font-size: 27px; font-weight: 650; margin: 6px 0 2px; }
+  .vb-card .sub { font-size: 12px; color: var(--ink2); }
+  .vb-card.wide { grid-column: span 3; display: flex; align-items: center; gap: 26px; }
+  .vb-proj { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+  .vb-proj .row1 { display: flex; align-items: center; gap: 10px; }
+  .vb-proj .stats { display: flex; gap: 22px; margin-left: auto; font-size: 12.5px; color: var(--ink2); font-variant-numeric: tabular-nums; }
+  .vb-proj .stats b { color: var(--ink); font-weight: 600; }
+  .vb-inline-adv { border-top: 1px dashed var(--border); margin-top: 12px; padding-top: 12px; }
+  .vb-name { font-weight: 600; font-size: 14.5px; color: var(--ink); }
+  .vb-name:hover { color: var(--accent); }
+
+  /* =========================================================
+     VARIANT C — Command deck: always dark, top tabs, ticker, tray
+     ========================================================= */
+  .vc {
+    color-scheme: dark;
+    --page: #0c0d10;
+    --surface: #14161b;
+    --ink: #f2f3f5;
+    --ink2: #c3c2b7;
+    --muted: #82868f;
+    --grid: #24262c;
+    --baseline: #383835;
+    --border: rgba(255, 255, 255, 0.09);
+    --accent: #3987e5;
+    --accent-soft: rgba(57, 135, 229, 0.14);
+    --advisor: #9085e9;
+    --advisor-soft: rgba(144, 133, 233, 0.13);
+    --good-text: #0ca30c;
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --s4: #c98500;
+    background: var(--page); color: var(--ink);
+    min-height: 100vh; padding-bottom: 120px;
+  }
+  .vc-top { display: flex; align-items: center; gap: 22px; padding: 0 20px; height: 46px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 40; }
+  .vc-brand { font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 0.14em; }
+  .vc-brand .glyph { color: var(--advisor); }
+  .vc-tabs { display: flex; gap: 2px; height: 100%; }
+  .vc-tab { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); padding: 0 11px; border-bottom: 2px solid transparent; }
+  .vc-tab:hover { color: var(--ink); }
+  .vc-tab.on { color: var(--ink); border-bottom-color: var(--advisor); }
+  .vc-top .right { margin-left: auto; display: flex; align-items: center; gap: 14px; font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+  .vc-top .live { color: var(--good); }
+  .vc-main { padding: 18px 22px; max-width: 1160px; }
+  .vc-strip { display: flex; gap: 26px; font-family: var(--mono); font-size: 11.5px; color: var(--muted); padding: 0 2px 12px; flex-wrap: wrap; }
+  .vc-strip b { color: var(--ink); font-weight: 600; }
+  .vc table { font-family: var(--mono); font-size: 12px; }
+  .vc table th { text-align: left; font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 5px 10px; border-bottom: 1px solid var(--border); font-weight: 600; }
+  .vc table td { padding: 5px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  .vc tr[data-act] { cursor: pointer; }
+  .vc tbody tr:hover { background: rgba(255,255,255,0.035); }
+  .vc .pname { color: var(--ink); font-weight: 600; }
+  .vc .ppath { color: var(--muted); font-size: 11px; }
+  .vc-h1 { font-family: var(--mono); font-size: 15px; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .vc-ticker { position: fixed; left: 0; right: 0; bottom: 0; height: 34px; background: var(--surface); border-top: 1px solid var(--border); overflow: hidden; display: flex; align-items: center; z-index: 50; }
+  .vc-ticker .tlabel { flex: none; padding: 0 12px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.12em; color: var(--advisor); border-right: 1px solid var(--border); text-transform: uppercase; }
+  .vc-ticker .scroll { white-space: nowrap; font-family: var(--mono); font-size: 11px; color: var(--ink2); animation: tick 40s linear infinite; padding-left: 100%; }
+  .vc-ticker .scroll .tp { color: var(--accent); }
+  @keyframes tick { to { transform: translateX(-100%); } }
+  @media (prefers-reduced-motion: reduce) { .vc-ticker .scroll { padding-left: 12px; } }
+  .vc-tray { position: fixed; right: 16px; bottom: 46px; width: 330px; z-index: 55; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 10px 32px rgba(0,0,0,0.5); overflow: hidden; }
+  .vc-tray .thead { display: flex; align-items: center; gap: 8px; padding: 9px 13px; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--advisor); border-bottom: 1px solid var(--border); width: 100%; text-align: left; }
+  .vc-tray .thead .n { margin-left: auto; color: var(--muted); }
+  .vc-tray .titem { padding: 9px 13px; border-bottom: 1px solid var(--grid); font-size: 12.5px; }
+  .vc-tray .titem .r1 { display: flex; align-items: center; gap: 9px; }
+  .vc-tray .st { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; margin-left: auto; }
+  .vc-tray .st.q { color: var(--warn); }
+  .vc-tray .st.r { color: var(--accent); }
+  .vc-tray .st.d { color: var(--good); }
+  .vc-tray .body { max-height: 330px; overflow-y: auto; }
+
+  /* =========================================================
+     VARIANT D — HUD: single-theme holographic landing page
+     ========================================================= */
+  .vd {
+    color-scheme: dark;
+    --page: #04070c;
+    --surface: rgba(8, 18, 26, 0.85);
+    --ink: #d8f2fc;
+    --ink2: #9fc3d2;
+    --muted: #54788c;
+    --grid: rgba(56, 214, 245, 0.12);
+    --baseline: rgba(56, 214, 245, 0.3);
+    --border: rgba(56, 214, 245, 0.22);
+    --accent: #38d6f5;
+    --accent-soft: rgba(56, 214, 245, 0.12);
+    --advisor: #38d6f5;
+    --advisor-soft: rgba(56, 214, 245, 0.12);
+    --good-text: #2fe08a;
+    --cyan: #38d6f5;
+    --cyan-line: rgba(56, 214, 245, 0.28);
+    min-height: 100vh; padding-bottom: 150px;
+    color: var(--ink); font-family: var(--mono);
+    background:
+      radial-gradient(1200px 620px at 50% -10%, rgba(56, 214, 245, 0.10), transparent 60%),
+      radial-gradient(900px 520px at 50% 112%, rgba(56, 214, 245, 0.06), transparent 60%),
+      repeating-linear-gradient(0deg, rgba(56, 214, 245, 0.025) 0 1px, transparent 1px 44px),
+      repeating-linear-gradient(90deg, rgba(56, 214, 245, 0.025) 0 1px, transparent 1px 44px),
+      #04070c;
+  }
+  .vd::after {
+    content: ""; position: fixed; left: 0; right: 0; top: 0; height: 2px; pointer-events: none; z-index: 30;
+    background: linear-gradient(90deg, transparent, rgba(56, 214, 245, 0.30), transparent);
+    animation: vd-scan 8s ease-in-out infinite;
+  }
+  @keyframes vd-scan { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(calc(100vh - 2px)); } }
+  @keyframes vd-rot { to { transform: rotate(360deg); } }
+  @keyframes vd-blink { 50% { opacity: 0; } }
+  .vd .dim { color: var(--muted); }
+  .vd-topbar { display: flex; justify-content: space-between; gap: 14px; padding: 14px 24px; font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink2); border-bottom: 1px solid var(--cyan-line); }
+  .vd-topbar .ok { color: var(--good-text); text-shadow: 0 0 9px rgba(47, 224, 138, 0.55); }
+  .vd-grid { display: grid; grid-template-columns: 1fr 350px 1fr; gap: 18px; padding: 26px 24px 0; max-width: 1240px; margin: 0 auto; align-items: start; }
+  .vd-mod { position: relative; padding: 16px 18px; margin-bottom: 18px; border: 1px solid var(--cyan-line); background: linear-gradient(180deg, rgba(10, 22, 32, 0.72), rgba(6, 13, 20, 0.88)); box-shadow: inset 0 0 26px rgba(56, 214, 245, 0.05); }
+  .vd-mod::before { content: ""; position: absolute; top: -1px; left: -1px; width: 14px; height: 14px; border-top: 2px solid var(--cyan); border-left: 2px solid var(--cyan); }
+  .vd-mod::after { content: ""; position: absolute; bottom: -1px; right: -1px; width: 14px; height: 14px; border-bottom: 2px solid var(--cyan); border-right: 2px solid var(--cyan); }
+  .vd-h { font-size: 10px; font-weight: 600; letter-spacing: 0.22em; color: var(--cyan); margin-bottom: 12px; text-transform: uppercase; }
+  .vd-caret { color: var(--cyan); animation: vd-blink 1s steps(1) infinite; }
+  .vd-row { display: grid; grid-template-columns: 104px 1fr 64px; gap: 10px; align-items: center; font-size: 11.5px; padding: 4px 0; }
+  .vd-row .pn { color: var(--ink2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vd-row .pv { text-align: right; color: var(--cyan); font-variant-numeric: tabular-nums; }
+  .vd-bar { height: 8px; min-width: 2px; background: linear-gradient(90deg, rgba(56, 214, 245, 0.25), var(--cyan)); box-shadow: 0 0 8px rgba(56, 214, 245, 0.5); }
+  .vd-sys { display: flex; align-items: center; gap: 9px; font-size: 11px; padding: 6px 0; border-bottom: 1px solid rgba(56, 214, 245, 0.09); }
+  .vd-sys:last-child { border-bottom: none; }
+  .vd-sys .lamp { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .vd-sys .lamp.on { background: var(--good-text); box-shadow: 0 0 8px rgba(47, 224, 138, 0.7); }
+  .vd-sys .lamp.off { background: transparent; border: 1.5px solid var(--muted); }
+  .vd-sys .k { color: var(--muted); font-size: 9.5px; letter-spacing: 0.1em; }
+  .vd-sys .s { margin-left: auto; font-size: 9.5px; letter-spacing: 0.14em; color: var(--ink2); }
+  .vd-center { text-align: center; }
+  .vd-gauge .rot { animation: vd-rot 26s linear infinite; transform-origin: 125px 125px; }
+  .vd-gauge .prog { filter: drop-shadow(0 0 6px rgba(56, 214, 245, 0.6)); }
+  .vd-readouts { display: flex; justify-content: space-between; gap: 8px; margin: 14px 8px 4px; }
+  .vd-readouts .v { color: var(--cyan); font-size: 15px; text-shadow: 0 0 10px rgba(56, 214, 245, 0.5); font-variant-numeric: tabular-nums; }
+  .vd-readouts .l { font-size: 8.5px; letter-spacing: 0.18em; color: var(--muted); margin-top: 2px; }
+  .vd-orb { width: 64px; height: 64px; border-radius: 50%; border: 1px solid var(--cyan-line); color: var(--cyan); display: inline-flex; align-items: center; justify-content: center; margin-top: 16px; box-shadow: 0 0 18px rgba(56, 214, 245, 0.25), inset 0 0 14px rgba(56, 214, 245, 0.12); }
+  .vd-orb:hover { box-shadow: 0 0 30px rgba(56, 214, 245, 0.5), inset 0 0 18px rgba(56, 214, 245, 0.2); }
+  .vd-orb svg { width: 22px; height: 22px; }
+  .vd-orb.busy svg { animation: spin 1.2s linear infinite; }
+  .vd-orb-label { font-size: 9px; letter-spacing: 0.2em; color: var(--ink2); margin-top: 9px; text-transform: uppercase; }
+  .vd .act-item { border-color: rgba(56, 214, 245, 0.10); }
+  .vd .act-item .meta .proj { color: var(--cyan); }
+  .vd-dock { position: fixed; left: 50%; transform: translateX(-50%); bottom: 56px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; z-index: 45; max-width: 94vw; }
+  .vd-dockbtn { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; padding: 9px 13px; color: var(--ink2); border: 1px solid var(--cyan-line); background: rgba(6, 14, 20, 0.85); }
+  .vd-dockbtn:hover, .vd-dockbtn.on { color: var(--cyan); box-shadow: 0 0 14px rgba(56, 214, 245, 0.35), inset 0 0 10px rgba(56, 214, 245, 0.1); }
+  .vd-adv { position: fixed; top: 64px; right: 20px; width: 352px; max-height: calc(100vh - 230px); overflow-y: auto; z-index: 55; padding: 16px; background: rgba(6, 14, 22, 0.95); border: 1px solid var(--cyan-line); box-shadow: 0 0 30px rgba(56, 214, 245, 0.18); }
+  .vd-adv .dhead { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 10.5px; letter-spacing: 0.18em; }
+  .vd-adv .x { margin-left: auto; color: var(--muted); font-size: 16px; padding: 2px 7px; }
+  .vd-adv .x:hover { color: var(--ink); }
+  .vd-stub { max-width: 720px; margin: 70px auto 0; padding: 0 20px; }
+
+  @media (max-width: 940px) {
+    .vd-grid { grid-template-columns: 1fr; }
+    .vd-center { order: -1; }
+
+    .vb-body { grid-template-columns: 1fr; }
+    .vb-rail { display: none; }
+    .vb-grid { grid-template-columns: 1fr 1fr; }
+    .vb-card.wide { grid-column: span 2; flex-wrap: wrap; }
+    .va { grid-template-columns: 60px 1fr; }
+    .va-nav span, .va-brand span, .va-side .foot { display: none; }
+    .va-drawer { width: 100%; }
+  }
+</style>
+
+<div id="app"></div>
+<div id="tooltip"></div>
+<div id="proto-bar">
+  <button data-act="prev" aria-label="Previous variant">‹</button>
+  <span class="plabel" id="proto-label"></span>
+  <button data-act="next" aria-label="Next variant">›</button>
+  <span class="pkeys">← →</span>
+</div>
+
+<script>
+/* ============================= mock data ============================= */
+const MODELS = [
+  { id: 'claude-fable-5',    name: 'Fable 5',   varClass: 's1' },
+  { id: 'claude-opus-5',     name: 'Opus 5',    varClass: 's2', longCtx: true },
+  { id: 'claude-sonnet-5',   name: 'Sonnet 5',  varClass: 's3' },
+  { id: 'claude-haiku-4-5',  name: 'Haiku 4.5', varClass: 's4' },
+];
+// daily $ per model, 14 days
+const USAGE_DAYS = [
+  { d: 'Jul 29', v: [9.8, 3.1, 2.2, 0.4] },
+  { d: 'Jul 30', v: [12.4, 0, 3.1, 0.6] },
+  { d: 'Jul 31', v: [7.2, 5.8, 1.4, 0.3] },
+  { d: 'Aug 1',  v: [4.1, 0, 0.8, 0.2] },
+  { d: 'Aug 2',  v: [0.9, 0, 0.3, 0.1] },
+  { d: 'Aug 3',  v: [1.6, 0, 0.2, 0] },
+  { d: 'Aug 4',  v: [11.3, 2.4, 2.8, 0.5] },
+  { d: 'Aug 5',  v: [14.9, 6.2, 1.9, 0.7] },
+  { d: 'Aug 6',  v: [10.2, 1.1, 3.4, 0.4] },
+  { d: 'Aug 7',  v: [16.8, 4.5, 2.1, 0.9] },
+  { d: 'Aug 8',  v: [13.1, 0, 4.2, 0.6] },
+  { d: 'Aug 9',  v: [2.2, 0, 0.5, 0.1] },
+  { d: 'Aug 10', v: [3.4, 1.8, 0.7, 0.2] },
+  { d: 'Aug 11', v: [18.6, 5.1, 3.3, 1.1] },
+];
+const MODEL_TOTALS = MODELS.map((m, i) => ({
+  ...m, total: USAGE_DAYS.reduce((s, day) => s + day.v[i], 0),
+})).sort((a, b) => b.total - a.total);
+const SPEND_14D = USAGE_DAYS.reduce((s, day) => s + day.v.reduce((a, b) => a + b, 0), 0);
+
+const PROJECTS = [
+  { id: 'admin-center',   path: 'D:\\Claude\\admin-center',    sessions: 14, live: 1, last: '2h ago',  cost: 63.1, tokens: '41.2M', checked: '2h ago',  trend: [2,4,3,6,5,9,8,12] },
+  { id: 'itworx-portal',  path: 'D:\\work\\itworx-portal',     sessions: 31, live: 0, last: '1d ago',  cost: 88.4, tokens: '71.9M', checked: '3d ago',  trend: [8,7,9,6,10,8,7,9] },
+  { id: 'data-pipeline',  path: 'D:\\work\\data-pipeline',     sessions: 6,  live: 0, last: '12d ago', cost: 9.2,  tokens: '6.4M',  orphan: true,       trend: [4,3,2,2,1,0,0,1] },
+  { id: 'claude-config',  path: 'D:\\claude-config',           sessions: 9,  live: 0, last: '5h ago',  cost: 14.7, tokens: '10.1M', checked: null,      trend: [1,2,1,3,2,2,4,3] },
+  { id: 'ml-experiments', path: 'D:\\work\\ml-experiments',    sessions: 18, live: 0, last: '4d ago',  cost: 41.3, tokens: '33.6M', checked: null,      trend: [5,7,6,8,4,3,2,1] },
+  { id: 'notes-site',     path: 'D:\\personal\\notes-site',    sessions: 3,  live: 0, last: '21d ago', cost: 2.1,  tokens: '1.7M',  checked: null,      trend: [2,1,0,0,1,0,0,0] },
+  { id: 'legacy-scripts', path: 'C:\\Users\\fadi\\legacy-scripts', sessions: 2, live: 0, last: '48d ago', cost: 0.8, tokens: '0.5M', orphan: true,      trend: [1,0,0,0,0,0,0,0] },
+];
+
+const SESSIONS = [
+  { title: 'Chart wayfinder map for Claude Admin Center v1', sid: 'dbcd61cd', live: true,  when: '2h ago',    agents: 3, tokens: '8.1M',  cost: '$12.40' },
+  { title: 'Resolve research tickets 01 and 02',             sid: '7f3a99b0', live: false, when: 'Yesterday', agents: 5, tokens: '11.6M', cost: '$18.20' },
+  { title: 'Domain model grilling session',                  sid: 'c41d2e17', live: false, when: 'Yesterday', agents: 0, tokens: '2.3M',  cost: '$4.10' },
+  { title: 'Transcript GC’d — Ledger record only',           sid: 'a9b0c1d2', gc: true,    when: 'Jul 14',    agents: 2, tokens: '5.9M',  cost: '$9.80' },
+];
+
+const ENABLEMENT = [
+  { name: 'mattpocock-skills', kind: 'plugin',        on: true,  scope: 'global' },
+  { name: 'dataviz',           kind: 'built-in skill', on: true,  scope: 'global' },
+  { name: 'github',            kind: 'MCP · local',    on: true,  scope: 'this project' },
+  { name: 'claude_ai_Notion',  kind: 'MCP · managed',  on: false, scope: 'overridden here' },
+  { name: 'security-review',   kind: 'skill',          on: false, scope: 'overridden here' },
+];
+
+const ACTIVITY = [
+  { t: '14:32', p: 'admin-center',   q: '/mattpocock-skills:wayfinder with the map (issue #1)' },
+  { t: '12:05', p: 'claude-config',  q: 'why is my statusline not updating?' },
+  { t: '11:48', p: 'itworx-portal',  q: 'add retry logic to the sync endpoint' },
+  { t: '09:12', p: 'admin-center',   q: '/loop 15m check ci on main' },
+  { t: 'Yest.', p: 'ml-experiments', q: 'summarize eval results in results/aug' },
+  { t: 'Yest.', p: 'admin-center',   q: 'resolve research tickets 01 and 02' },
+  { t: 'Yest.', p: 'itworx-portal',  q: 'migrate auth middleware to the new session store' },
+  { t: 'Aug 9', p: 'claude-config',  q: 'add a permission rule for bq queries' },
+];
+
+const RECS = [
+  { sev: 'serious', label: 'Fix soon', ic: '!',  t: 'Usage history at risk',
+    b: 'This project has 41 MB of transcripts and no Ledger rows yet — history will be lost at the next transcript GC. Seed the Ledger before cleanup runs.' },
+  { sev: 'warn',    label: 'Consider', ic: '▲',  t: 'Managed MCP server unused',
+    b: 'claude_ai_Notion last authenticated 62 days ago and appears in no recent session. Disabling it here would trim the tool surface.' },
+  { sev: 'good',    label: 'Healthy',  ic: '✓',  t: 'Skills are in good shape',
+    b: 'All 5 project skills were invoked in the last 30 days; no deprecated skill is enabled in this project.' },
+];
+const ADV_HISTORY = [
+  { d: 'Today 09:12', n: '3 recommendations' },
+  { d: 'Aug 4 16:40', n: '2 recommendations' },
+  { d: 'Jul 28 11:03', n: '4 recommendations' },
+];
+
+const SECTIONS = ['Projects', 'Sessions', 'Usage', 'Models', 'Skills', 'Plugins', 'MCP Servers', 'Activity'];
+
+/* ============================= icons ============================= */
+const IC = {
+  spark: '<svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1.2 9.6 6.4 14.8 8 9.6 9.6 8 14.8 6.4 9.6 1.2 8 6.4 6.4z"/></svg>',
+  Projects: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.5 3.5h4l1.5 2h7.5v7h-13z"/></svg>',
+  Sessions: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12v8H6l-3 3v-3H2z"/></svg>',
+  Usage: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 13V7M8 13V3M13 13V9"/></svg>',
+  Models: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="8" height="8" rx="1"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/></svg>',
+  Skills: '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.7 4.8L14.5 8l-4.8 1.7L8 14.5 6.3 9.7 1.5 8l4.8-1.7z"/></svg>',
+  Plugins: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="12" height="8" rx="1"/><path d="M5 6V3M11 6V3"/></svg>',
+  'MCP Servers': '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.5"/><path d="M8 1.5v4M8 10.5v4M1.5 8h4M10.5 8h4"/></svg>',
+  Activity: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.3"/><path d="M8 4.5V8l2.5 1.5"/></svg>',
+};
+
+/* ============================= state ============================= */
+const VARIANTS = {
+  A: 'A — Console · sidebar + advisor drawer',
+  B: 'B — Overview · drill-ins + activity rail',
+  C: 'C — Command deck · dark + advisor queue',
+  D: 'D — HUD · Stark-style landing page',
+};
+const state = {
+  variant: 'A',
+  page: 'Projects',      // section name, or 'detail'
+  detailOf: null,        // project id
+  usageTable: false,
+  adv: {},               // advisor runs: key -> 'running' | 'done'
+  advTarget: null,       // variant A drawer target (project id)
+  bOpen: null,           // variant B: which project row has the inline advisor open
+  queue: [],             // variant C: [{ id, st: 'queued'|'running'|'done', open }]
+  trayOpen: true,
+};
+try {
+  const v = new URLSearchParams(location.search).get('variant');
+  if (v && VARIANTS[v.toUpperCase()]) state.variant = v.toUpperCase();
+} catch (e) { /* fine — default to A */ }
+
+/* ============================= chart builders (shared) ============================= */
+function roundedTopRect(x, y, w, h, r) {
+  if (h <= r) return `M${x},${y} h${w} v${h} h${-w} Z`;
+  return `M${x},${y + h} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + w - r},${y} Q${x + w},${y} ${x + w},${y + r} L${x + w},${y + h} Z`;
+}
+function stackedChart() {
+  const W = 660, H = 210, padL = 34, padR = 6, padT = 8, padB = 20;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const max = 30; // nice ceiling over the 28.1 peak
+  const slot = innerW / USAGE_DAYS.length, barW = Math.round(slot * 0.62);
+  let out = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Daily spend by model, last 14 days">`;
+  for (const gv of [0, 10, 20, 30]) {
+    const gy = padT + innerH - (gv / max) * innerH;
+    out += `<line x1="${padL}" y1="${gy}" x2="${W - padR}" y2="${gy}" stroke="${gv === 0 ? 'var(--baseline)' : 'var(--grid)'}" stroke-width="1"/>`;
+    if (gv > 0) out += `<text x="${padL - 5}" y="${gy + 3}" text-anchor="end" font-size="10" fill="var(--muted)">$${gv}</text>`;
+  }
+  USAGE_DAYS.forEach((day, di) => {
+    const x = Math.round(padL + di * slot + (slot - barW) / 2);
+    let yCursor = padT + innerH;
+    const segs = day.v.map((v, mi) => ({ v, mi })).filter(s => s.v > 0);
+    segs.forEach((s, k) => {
+      const h = Math.max((s.v / max) * innerH, 1.5);
+      const y = yCursor - h;
+      const tip = `${day.d} · ${MODELS[s.mi].name} · $${s.v.toFixed(2)}`;
+      const isTop = k === segs.length - 1;
+      if (isTop) out += `<path d="${roundedTopRect(x, y, barW, h, 3)}" fill="var(--${MODELS[s.mi].varClass})" data-tip="${tip}"/>`;
+      else out += `<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="var(--${MODELS[s.mi].varClass})" data-tip="${tip}"/>`;
+      yCursor = y - 2; // 2px surface gap between stacked segments
+    });
+    if (di % 2 === 0) out += `<text x="${x + barW / 2}" y="${H - 6}" text-anchor="middle" font-size="10" fill="var(--muted)">${day.d}</text>`;
+  });
+  return out + '</svg>';
+}
+function chartLegend() {
+  return '<div class="legend">' + MODELS.map(m =>
+    `<span class="chip"><span class="sw" style="background:var(--${m.varClass})"></span>${m.name}${m.longCtx ? ' <span class="badge longctx">incl. [1m]</span>' : ''}</span>`
+  ).join('') + '</div>';
+}
+function usageTable() {
+  let rows = USAGE_DAYS.map(day =>
+    `<tr><td class="muted">${day.d}</td>${day.v.map(v => `<td class="num">$${v.toFixed(2)}</td>`).join('')}<td class="num"><b>$${day.v.reduce((a, b) => a + b, 0).toFixed(2)}</b></td></tr>`
+  ).join('');
+  return `<table><thead><tr><th>Day</th>${MODELS.map(m => `<th>${m.name}</th>`).join('')}<th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function hbars() {
+  const max = MODEL_TOTALS[0].total;
+  return MODEL_TOTALS.map(m => `
+    <div class="hbar-row">
+      <span style="color:var(--ink2)">${m.name}${m.longCtx ? ' <span class="badge longctx">[1m]</span>' : ''}</span>
+      <div class="hbar-track"><div class="hbar" style="width:${(m.total / max * 100).toFixed(1)}%;background:var(--${m.varClass})" data-tip="${m.id} · $${m.total.toFixed(2)} over 14 days"></div></div>
+      <span class="hbar-val">$${m.total.toFixed(2)}</span>
+    </div>`).join('');
+}
+function sparkline(points, w = 84, h = 22, cls = 'var(--accent)') {
+  const max = Math.max(...points, 1);
+  const pts = points.map((p, i) => `${(i / (points.length - 1) * (w - 6) + 3).toFixed(1)},${(h - 3 - (p / max) * (h - 8)).toFixed(1)}`);
+  const last = pts[pts.length - 1].split(',');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts.join(' ')}" fill="none" stroke="${cls}" stroke-width="2" stroke-linejoin="round"/><circle cx="${last[0]}" cy="${last[1]}" r="2.6" fill="${cls}"/></svg>`;
+}
+function usageTiles() {
+  return `<div class="tiles">
+    <div class="tile"><div class="lbl">Spend · 14d</div><div class="val num">$${SPEND_14D.toFixed(2)}</div><div class="sub up">↑ 12% vs prior 14d</div></div>
+    <div class="tile"><div class="lbl">Tokens · 14d</div><div class="val num">182M</div><div class="sub">61% cache reads</div></div>
+    <div class="tile"><div class="lbl">Sessions · 14d</div><div class="val num">96</div><div class="sub">1 live now</div></div>
+    <div class="tile"><div class="lbl">Ledger</div><div class="val num">412 days</div><div class="sub">history survives GC</div></div>
+  </div>`;
+}
+function usageCharts(rangePills) {
+  return `
+    ${rangePills ? `<div class="pills" style="margin-bottom:14px">${['7d', '14d', '30d', 'All'].map(r => `<button class="pill ${r === '14d' ? 'on' : ''}">${r}</button>`).join('')}</div>` : ''}
+    ${usageTiles()}
+    <div class="card" style="margin-top:14px">
+      <div class="card-head"><h3>Daily spend by model</h3>
+        <button class="ghost-btn ${state.usageTable ? 'on' : ''}" data-act="toggle-table">${state.usageTable ? 'Chart' : 'Table'}</button></div>
+      <div class="chart-scroll">${state.usageTable ? usageTable() : stackedChart()}</div>
+      ${state.usageTable ? '' : chartLegend()}
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="card-head"><h3>Spend by model · 14d</h3><span class="muted" style="font-size:11px">Ledger-backed — survives transcript GC</span></div>
+      ${hbars()}
+    </div>`;
+}
+
+/* ============================= advisor (shared simulation) ============================= */
+function advKey(id) { return state.variant + ':' + id; }
+function startAdvisor(id) {
+  const k = advKey(id);
+  if (state.adv[k] === 'running') return;
+  state.adv[k] = 'running';
+  setTimeout(() => {
+    if (state.adv[k] === 'running') {
+      state.adv[k] = 'done';
+      const q = state.queue.find(x => x.id === id);
+      if (q) q.st = 'done';
+      render();
+    }
+  }, 1700);
+}
+function recCards(compact) {
+  return RECS.map(r => `
+    <div class="rec">
+      <div class="sev ${r.sev}"><span class="ic">${r.ic}</span>${r.label}</div>
+      <h4>${r.t}</h4>
+      ${compact ? '' : `<p>${r.b}</p>`}
+      ${compact ? `<p>${r.b}</p>` : ''}
+    </div>`).join('');
+}
+function advBody(id, opts = {}) {
+  const st = state.adv[advKey(id)];
+  if (st === 'running') {
+    return `<div style="display:flex;align-items:center;gap:10px;color:var(--ink2);font-size:13px">
+        <div class="spinner"></div> Asking Claude about <b>${id}</b>…</div>
+      <div class="skeleton" style="width:90%"></div><div class="skeleton" style="width:70%"></div><div class="skeleton" style="width:80%"></div>`;
+  }
+  if (st === 'done') {
+    return `<div class="muted" style="font-size:11.5px;margin-bottom:8px">Run finished just now · 41s · claude-haiku-4-5 · 3 recommendations</div>
+      ${recCards(opts.compact)}
+      <div class="adv-history"><b style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">History</b>
+        ${ADV_HISTORY.map(h => `<div class="row"><span>${h.d}</span><span>${h.n}</span></div>`).join('')}</div>`;
+  }
+  return `<p class="muted" style="font-size:12.5px">No advisor run yet for <b>${id}</b>.</p>
+    <button class="ask-btn-wide" data-act="ask" data-id="${id}">${IC.spark} Ask Claude</button>`;
+}
+
+/* ============================= variant A — Console ============================= */
+function askCell(p) {
+  const st = state.adv[advKey(p.id)];
+  const checked = st === 'done' ? 'just now' : p.checked;
+  return `<span style="display:inline-flex;align-items:center;gap:6px">
+    ${checked ? `<span class="checked-at">✓ ${checked}</span>` : ''}
+    <button class="ask-btn ${st === 'running' ? 'busy' : ''}" data-act="ask-drawer" data-id="${p.id}" title="Ask Claude about ${p.id}" aria-label="Ask Claude about ${p.id}">${IC.spark}</button>
+  </span>`;
+}
+function projectBadges(p) {
+  return (p.orphan ? ' <span class="badge orphan">orphaned</span>' : '') +
+         (p.live ? ' <span class="badge live">1 live</span>' : '');
+}
+function vaProjects() {
+  return `<div class="va-pagehead"><h1>Projects</h1><span class="muted" style="font-size:12px">48 in registry · 2 orphaned on disk</span></div>
+  <div class="card" style="padding:0 8px">
+  <table><thead><tr><th>Project</th><th>Sessions</th><th>Last active</th><th>Cost · 30d</th><th>Trend</th><th></th></tr></thead><tbody>
+  ${PROJECTS.map(p => `
+    <tr data-act="open-detail" data-id="${p.id}">
+      <td><div class="obj-name">${p.id}${projectBadges(p)}</div><div class="obj-path">${p.path}</div></td>
+      <td class="num">${p.sessions}</td>
+      <td class="muted">${p.last}</td>
+      <td class="num">$${p.cost.toFixed(2)}</td>
+      <td>${sparkline(p.trend)}</td>
+      <td style="text-align:right">${askCell(p)}</td>
+    </tr>`).join('')}
+  </tbody></table></div>`;
+}
+function vaDetail() {
+  const p = PROJECTS.find(x => x.id === state.detailOf) || PROJECTS[0];
+  return `<a class="va-back" href="#" data-act="nav" data-id="Projects">‹ Projects</a>
+  <div class="va-detailhead">
+    <div>
+      <h1 style="font-size:19px">${p.id} ${projectBadges(p)}</h1>
+      <div class="obj-path" style="margin-top:3px">${p.path}</div>
+    </div>
+    <button class="ask-btn-wide" data-act="ask-drawer" data-id="${p.id}">${IC.spark} Ask Claude ${p.checked ? `<span class="checked-at">· ✓ ${p.checked}</span>` : ''}</button>
+  </div>
+  <div class="tiles">
+    <div class="tile"><div class="lbl">Sessions</div><div class="val num">${p.sessions}</div></div>
+    <div class="tile"><div class="lbl">Tokens · 30d</div><div class="val num">${p.tokens}</div></div>
+    <div class="tile"><div class="lbl">Spend · 30d</div><div class="val num">$${p.cost.toFixed(2)}</div></div>
+    <div class="tile"><div class="lbl">Enabled</div><div class="val num">3<span class="muted" style="font-size:15px">/5</span></div><div class="sub">2 overridden here</div></div>
+  </div>
+  <div class="va-section"><h2>Sessions</h2>
+    <div class="card" style="padding:0 8px"><table>
+      <thead><tr><th>Session</th><th>When</th><th>Agent runs</th><th>Tokens</th><th>Cost</th><th></th></tr></thead><tbody>
+      ${SESSIONS.map(s => `<tr>
+        <td><div class="obj-name" style="font-weight:500">${s.title} ${s.live ? '<span class="badge live">live</span>' : ''}${s.gc ? '<span class="badge gc">ledger only</span>' : ''}</div>
+            <div class="obj-path">${s.sid}…</div></td>
+        <td class="muted">${s.when}</td>
+        <td class="num">${s.agents ? s.agents + ' rolled up' : '—'}</td>
+        <td class="num">${s.tokens}</td><td class="num">${s.cost}</td>
+        <td style="text-align:right"><button class="ask-btn" data-act="ask-drawer" data-id="${s.sid}" aria-label="Ask Claude about session">${IC.spark}</button></td>
+      </tr>`).join('')}
+    </tbody></table></div></div>
+  <div class="va-section"><h2>Effective enablement</h2>
+    <div class="card">${ENABLEMENT.map(e => `
+      <div class="enab-row"><span class="${e.on ? 'dot-on' : 'dot-off'}"></span>
+        <b style="font-weight:600">${e.name}</b>&nbsp;<span class="muted" style="font-size:11.5px">${e.kind}</span>
+        <span class="scope">${e.scope}</span></div>`).join('')}
+      <div class="muted" style="font-size:11px;margin-top:9px">Resolved lazily: global settings + this project’s overrides.</div>
+    </div></div>
+  <div class="va-section"><h2>Memory</h2>
+    <div class="card" style="font-size:13px">MEMORY.md · 6 memories · updated 3d ago</div></div>`;
+}
+function vaActivity() {
+  return `<div class="va-pagehead"><h1>Activity</h1><span class="muted" style="font-size:12px">from history.jsonl · live read</span></div>
+  <div class="card" style="padding:4px 16px">${ACTIVITY.map(a => `
+    <div class="act-item"><div class="meta"><span>${a.t}</span><span class="proj">${a.p}</span></div><div class="q">${a.q}</div></div>`).join('')}</div>`;
+}
+function vaDrawer() {
+  if (!state.advTarget) return '';
+  return `<aside class="va-drawer">
+    <div class="dhead"><span style="color:var(--advisor)">${IC.spark}</span>
+      <b>Advisor — ${state.advTarget}</b>
+      <button class="x" data-act="close-drawer" aria-label="Close advisor">×</button></div>
+    ${advBody(state.advTarget)}
+  </aside>`;
+}
+function renderA() {
+  const page = state.page;
+  let body;
+  if (page === 'detail') body = vaDetail();
+  else if (page === 'Projects') body = vaProjects();
+  else if (page === 'Usage') body = `<div class="va-pagehead"><h1>Usage</h1><span class="muted" style="font-size:12px">Ledger-backed</span></div>` + usageCharts(true);
+  else if (page === 'Activity') body = vaActivity();
+  else body = `<div class="stub">${IC[page] || ''}<br><b>${page}</b> — stubbed in this prototype.<br>Gets the same dense-table treatment as Projects.</div>`;
+  return `<div class="va">
+    <nav class="va-side">
+      <div class="va-brand"><span class="glyph">${IC.spark}</span><span>Claude Admin Center</span></div>
+      ${SECTIONS.map(s => `<button class="va-nav ${page === s || (page === 'detail' && s === 'Projects') ? 'on' : ''}" data-act="nav" data-id="${s}">${IC[s]}<span>${s}</span></button>`).join('')}
+      <div class="foot mono">CLAUDE_CONFIG_DIR<br>D:\\claude-config</div>
+    </nav>
+    <main class="va-main">${body}</main>
+    ${vaDrawer()}
+  </div>`;
+}
+
+/* ============================= variant B — Overview ============================= */
+function vbHome() {
+  return `<div class="vb-grid">
+    <button class="vb-card wide" data-act="nav" data-id="Usage">
+      <div><div class="t">${IC.Usage} Usage · 14d</div><div class="big num">$${SPEND_14D.toFixed(2)}</div><div class="sub up" style="color:var(--good-text)">↑ 12% vs prior 14d · 182M tokens</div></div>
+      <div style="margin-left:auto">${sparkline(USAGE_DAYS.map(d => d.v.reduce((a, b) => a + b, 0)), 220, 52)}</div>
+    </button>
+    <button class="vb-card" data-act="nav" data-id="Projects"><div class="t">${IC.Projects} Projects</div><div class="big num">48</div><div class="sub">2 orphaned on disk · 1 live session</div></button>
+    <button class="vb-card" data-act="nav" data-id="Sessions"><div class="t">${IC.Sessions} Sessions</div><div class="big num">96</div><div class="sub">14d · 11 with agent runs</div></button>
+    <button class="vb-card" data-act="nav" data-id="Models"><div class="t">${IC.Models} Models</div><div class="big num">4</div><div class="sub">Fable 5 = 66% of spend</div></button>
+    <button class="vb-card" data-act="nav" data-id="Skills"><div class="t">${IC.Skills} Skills</div><div class="big num">23</div><div class="sub">3 sources · 2 deprecated still enabled</div></button>
+    <button class="vb-card" data-act="nav" data-id="Plugins"><div class="t">${IC.Plugins} Plugins</div><div class="big num">6</div><div class="sub">all from official marketplace</div></button>
+    <button class="vb-card" data-act="nav" data-id="MCP Servers"><div class="t">${IC['MCP Servers']} MCP servers</div><div class="big num">9</div><div class="sub">6 local · 3 managed</div></button>
+  </div>`;
+}
+function vbProjects() {
+  return `<div class="crumbs"><a href="#" data-act="nav" data-id="home">Overview</a> / Projects</div>
+  <h1 style="font-size:19px;margin-bottom:14px">Projects</h1>
+  ${PROJECTS.map(p => {
+    const st = state.adv[advKey(p.id)];
+    const open = state.bOpen === p.id;
+    const checked = st === 'done' ? 'just now' : p.checked;
+    return `<div class="vb-proj">
+      <div class="row1">
+        <div>
+          <a href="#" class="vb-name" data-act="open-detail" data-id="${p.id}">${p.id}</a>${projectBadges(p)}
+          <div class="obj-path mono" style="font-size:11px;color:var(--muted)">${p.path}</div>
+        </div>
+        <div class="stats"><span><b>${p.sessions}</b> sessions</span><span><b>$${p.cost.toFixed(2)}</b> · 30d</span><span>${p.last}</span></div>
+        ${checked ? `<span class="checked-at">✓ ${checked}</span>` : ''}
+        <button class="ask-btn ${st === 'running' ? 'busy' : ''}" data-act="ask-inline" data-id="${p.id}" title="Ask Claude about ${p.id}" aria-label="Ask Claude about ${p.id}">${IC.spark}</button>
+      </div>
+      ${open ? `<div class="vb-inline-adv">${advBody(p.id)}</div>` : ''}
+    </div>`;
+  }).join('')}`;
+}
+function vbDetail() {
+  const p = PROJECTS.find(x => x.id === state.detailOf) || PROJECTS[0];
+  const st = state.adv[advKey(p.id)];
+  const open = state.bOpen === p.id;
+  return `<div class="crumbs"><a href="#" data-act="nav" data-id="home">Overview</a> / <a href="#" data-act="nav" data-id="Projects">Projects</a> / ${p.id}</div>
+  <div class="vb-proj">
+    <div class="row1">
+      <div><span style="font-size:18px;font-weight:650">${p.id}</span>${projectBadges(p)}
+        <div class="obj-path mono" style="font-size:11px;color:var(--muted)">${p.path}</div></div>
+      <button class="ask-btn-wide" style="margin-left:auto" data-act="ask-inline" data-id="${p.id}">${IC.spark} Ask Claude</button>
+    </div>
+    ${open ? `<div class="vb-inline-adv">${advBody(p.id)}</div>` : ''}
+  </div>
+  <div class="tiles" style="margin:14px 0">
+    <div class="tile"><div class="lbl">Sessions</div><div class="val num">${p.sessions}</div></div>
+    <div class="tile"><div class="lbl">Tokens · 30d</div><div class="val num">${p.tokens}</div></div>
+    <div class="tile"><div class="lbl">Spend · 30d</div><div class="val num">$${p.cost.toFixed(2)}</div></div>
+  </div>
+  <div class="card" style="margin-bottom:14px"><div class="card-head"><h3>Sessions</h3></div>
+    ${SESSIONS.map(s => `<div class="act-item" style="display:flex;gap:10px;align-items:center">
+      <div style="flex:1"><span style="font-weight:500">${s.title}</span> ${s.live ? '<span class="badge live">live</span>' : ''}${s.gc ? '<span class="badge gc">ledger only</span>' : ''}
+        <div class="meta mono" style="font-size:10.5px;color:var(--muted)">${s.sid}… · ${s.when} · ${s.agents ? s.agents + ' agent runs' : 'no agent runs'}</div></div>
+      <span class="num" style="font-size:12.5px">${s.tokens} · ${s.cost}</span></div>`).join('')}
+  </div>
+  <div class="card"><div class="card-head"><h3>Effective enablement</h3><span class="muted" style="font-size:11px">2 overridden here</span></div>
+    ${ENABLEMENT.map(e => `<div class="enab-row"><span class="${e.on ? 'dot-on' : 'dot-off'}"></span><b style="font-weight:600">${e.name}</b>&nbsp;<span class="muted" style="font-size:11.5px">${e.kind}</span><span class="scope">${e.scope}</span></div>`).join('')}
+  </div>`;
+}
+function renderB() {
+  const page = state.page;
+  let body;
+  if (page === 'home') body = vbHome();
+  else if (page === 'detail') body = vbDetail();
+  else if (page === 'Projects') body = vbProjects();
+  else if (page === 'Usage') body = `<div class="crumbs"><a href="#" data-act="nav" data-id="home">Overview</a> / Usage</div>` + usageCharts(false);
+  else body = `<div class="crumbs"><a href="#" data-act="nav" data-id="home">Overview</a> / ${page}</div><div class="stub"><b>${page}</b> — stubbed in this prototype.</div>`;
+  return `<div class="vb">
+    <header class="vb-top">
+      <button class="brand" data-act="nav" data-id="home"><span class="glyph">${IC.spark}</span> Claude Admin Center</button>
+      <div class="vb-search">⌕ Search projects, sessions, skills…</div>
+      <span class="root">D:\\claude-config</span>
+    </header>
+    <div class="vb-body">
+      <main class="vb-content">${body}</main>
+      <aside class="vb-rail"><h3><span class="pulse"></span> Activity</h3>
+        ${ACTIVITY.map(a => `<div class="act-item"><div class="meta"><span>${a.t}</span><span class="proj">${a.p}</span></div><div class="q">${a.q}</div></div>`).join('')}
+      </aside>
+    </div>
+  </div>`;
+}
+
+/* ============================= variant C — Command deck ============================= */
+function vcProjects() {
+  return `<div class="vc-strip"><span><b>48</b> REGISTRY</span><span><b>2</b> ORPHANED</span><span><b>1</b> LIVE</span><span><b>$189.50</b> 14D SPEND</span><span><b>182M</b> TOKENS</span></div>
+  <table><thead><tr><th>Project</th><th>Path</th><th>Sess</th><th>Last</th><th>30d cost</th><th>Checked</th><th></th></tr></thead><tbody>
+  ${PROJECTS.map(p => {
+    const st = state.adv[advKey(p.id)];
+    const inQ = state.queue.find(x => x.id === p.id);
+    const checked = st === 'done' ? 'now' : (p.checked || '—');
+    return `<tr data-act="open-detail" data-id="${p.id}">
+      <td class="pname">${p.id}${p.orphan ? ' <span class="badge orphan">orphan</span>' : ''}${p.live ? ' <span class="badge live">live</span>' : ''}</td>
+      <td class="ppath">${p.path}</td>
+      <td class="num">${p.sessions}</td>
+      <td class="muted">${p.last}</td>
+      <td class="num">$${p.cost.toFixed(2)}</td>
+      <td class="muted">${checked === '—' ? '—' : '✓ ' + checked}</td>
+      <td><button class="ask-btn ${st === 'running' ? 'busy' : ''}" data-act="ask-queue" data-id="${p.id}" title="Queue advisor run" aria-label="Queue advisor run for ${p.id}">${inQ && inQ.st !== 'done' ? '…' : IC.spark}</button></td>
+    </tr>`;
+  }).join('')}
+  </tbody></table>`;
+}
+function vcDetail() {
+  const p = PROJECTS.find(x => x.id === state.detailOf) || PROJECTS[0];
+  return `<a href="#" data-act="nav" data-id="Projects" class="mono" style="font-size:11px">‹ PROJECTS</a>
+  <div style="display:flex;align-items:baseline;gap:12px;margin:10px 0 2px">
+    <h1 class="vc-h1">${p.id}</h1>${projectBadges(p)}
+    <button class="ask-btn-wide" style="margin-left:auto;font-size:12px" data-act="ask-queue" data-id="${p.id}">${IC.spark} Queue advisor run</button>
+  </div>
+  <div class="ppath" style="margin-bottom:12px">${p.path}</div>
+  <div class="vc-strip"><span><b>${p.sessions}</b> SESSIONS</span><span><b>${p.tokens}</b> TOKENS 30D</span><span><b>$${p.cost.toFixed(2)}</b> SPEND 30D</span><span><b>3/5</b> ENABLED</span></div>
+  <table><thead><tr><th>Session</th><th>ID</th><th>When</th><th>Agents</th><th>Tokens</th><th>Cost</th></tr></thead><tbody>
+    ${SESSIONS.map(s => `<tr><td class="pname" style="font-weight:500">${s.title}${s.live ? ' <span class="badge live">live</span>' : ''}${s.gc ? ' <span class="badge gc">ledger</span>' : ''}</td>
+      <td class="ppath">${s.sid}</td><td class="muted">${s.when}</td><td class="num">${s.agents || '—'}</td><td class="num">${s.tokens}</td><td class="num">${s.cost}</td></tr>`).join('')}
+  </tbody></table>
+  <div style="margin-top:18px" class="card">
+    <div class="card-head"><h3 class="mono" style="letter-spacing:.08em;font-size:11px">EFFECTIVE ENABLEMENT</h3></div>
+    ${ENABLEMENT.map(e => `<div class="enab-row" style="font-family:var(--mono);font-size:12px"><span class="${e.on ? 'dot-on' : 'dot-off'}"></span>${e.name}&nbsp;<span class="muted">${e.kind}</span><span class="scope">${e.scope}</span></div>`).join('')}
+  </div>`;
+}
+function vcTray() {
+  if (!state.queue.length) return '';
+  const done = state.queue.filter(q => q.st === 'done').length;
+  return `<div class="vc-tray">
+    <button class="thead" data-act="tray-toggle">${IC.spark} Advisor <span class="n">${done}/${state.queue.length} done ${state.trayOpen ? '▾' : '▸'}</span></button>
+    ${state.trayOpen ? `<div class="body">${state.queue.map(q => `
+      <div class="titem">
+        <div class="r1" ${q.st === 'done' ? `data-act="tray-open" data-id="${q.id}" style="cursor:pointer"` : ''}>
+          <b>${q.id}</b>
+          <span class="st ${q.st === 'queued' ? 'q' : q.st === 'running' ? 'r' : 'd'}">${q.st === 'done' ? '✓ DONE' : q.st.toUpperCase()}</span>
+        </div>
+        ${q.open && q.st === 'done' ? `<div style="margin-top:9px">${recCards()}<div class="adv-history">${ADV_HISTORY.map(h => `<div class="row"><span>${h.d}</span><span>${h.n}</span></div>`).join('')}</div></div>` : ''}
+      </div>`).join('')}</div>` : ''}
+  </div>`;
+}
+function renderC() {
+  const page = state.page;
+  let body;
+  if (page === 'detail') body = vcDetail();
+  else if (page === 'Projects') body = vcProjects();
+  else if (page === 'Usage') body = `<h1 class="vc-h1" style="margin-bottom:12px">USAGE</h1>` + usageCharts(true);
+  else if (page === 'Activity') body = `<h1 class="vc-h1" style="margin-bottom:12px">ACTIVITY</h1>
+    <table><thead><tr><th>When</th><th>Project</th><th>Prompt</th></tr></thead><tbody>
+    ${ACTIVITY.map(a => `<tr><td class="muted">${a.t}</td><td style="color:var(--accent)">${a.p}</td><td style="white-space:normal;color:var(--ink2)">${a.q}</td></tr>`).join('')}</tbody></table>`;
+  else body = `<div class="stub"><b>${page}</b> — stubbed in this prototype. Same dense-grid treatment as Projects.</div>`;
+  const tickerText = ACTIVITY.map(a => `${a.t} <span class="tp">${a.p}</span> — “${a.q}”`).join(' &nbsp;·&nbsp; ');
+  return `<div class="vc">
+    <header class="vc-top">
+      <span class="vc-brand"><span class="glyph">◆</span> CLAUDE ADMIN CENTER</span>
+      <nav class="vc-tabs">${SECTIONS.map(s => `<button class="vc-tab ${page === s || (page === 'detail' && s === 'Projects') ? 'on' : ''}" data-act="nav" data-id="${s}">${s}</button>`).join('')}</nav>
+      <span class="right"><span>D:\\claude-config</span><span class="live">● LIVE</span></span>
+    </header>
+    <main class="vc-main">${body}</main>
+    ${vcTray()}
+    <div class="vc-ticker"><span class="tlabel">Activity</span><div class="scroll">${tickerText}</div></div>
+  </div>`;
+}
+
+/* ============================= variant D — HUD landing ============================= */
+const VD_SYSTEMS = [
+  { n: 'github',            k: 'MCP · LOCAL',   on: true,  s: 'ONLINE' },
+  { n: 'postgres',          k: 'MCP · LOCAL',   on: true,  s: 'ONLINE' },
+  { n: 'claude_ai_Notion',  k: 'MCP · MANAGED', on: false, s: 'IDLE 62D' },
+  { n: 'mattpocock-skills', k: 'PLUGIN',        on: true,  s: 'LOADED' },
+  { n: 'ledger',            k: 'SQLITE',        on: true,  s: '412 DAYS' },
+];
+function vdGauge() {
+  const R = 88, CIRC = 2 * Math.PI * R, pct = 0.63;
+  return `<svg class="vd-gauge" width="250" height="250" viewBox="0 0 250 250" role="img" aria-label="14-day spend $${SPEND_14D.toFixed(2)}, 63% of monthly budget">
+    <g class="rot"><circle cx="125" cy="125" r="112" fill="none" stroke="rgba(56,214,245,.3)" stroke-width="1.5" stroke-dasharray="2 7"/></g>
+    <circle cx="125" cy="125" r="${R}" fill="none" stroke="rgba(56,214,245,.14)" stroke-width="7"/>
+    <circle class="prog" cx="125" cy="125" r="${R}" fill="none" stroke="var(--cyan)" stroke-width="7" stroke-linecap="round"
+      stroke-dasharray="${(CIRC * pct).toFixed(1)} ${CIRC.toFixed(1)}" transform="rotate(-90 125 125)"/>
+    <text x="125" y="118" text-anchor="middle" font-size="30" font-weight="650" fill="var(--ink)">$${SPEND_14D.toFixed(2)}</text>
+    <text x="125" y="140" text-anchor="middle" font-size="9" letter-spacing="3" fill="var(--muted)">14-DAY SPEND</text>
+    <text x="125" y="160" text-anchor="middle" font-size="10" fill="var(--good-text)">▲ 12% · 63% OF BUDGET</text>
+  </svg>`;
+}
+function renderD() {
+  const st = state.adv[advKey('full-sweep')];
+  let body;
+  if (state.page !== 'home') {
+    body = `<div class="vd-stub"><div class="vd-mod">
+      <h3 class="vd-h">MODULE // ${state.page.toUpperCase()} <span class="dim">— OFFLINE IN PROTOTYPE</span></h3>
+      <p style="font-size:12px;color:var(--ink2);line-height:1.7">Drill-in pages aren’t built for this variant — the HUD treatment is the landing page. A section page would reuse variant C’s density wearing this skin.</p>
+      <button class="vd-dockbtn" data-act="nav" data-id="home" style="margin-top:12px">‹ Return to overview</button>
+    </div></div>`;
+  } else {
+    const top5 = [...PROJECTS].sort((a, b) => b.cost - a.cost).slice(0, 5);
+    const maxC = top5[0].cost;
+    body = `<div class="vd-grid">
+      <section>
+        <div class="vd-mod"><h3 class="vd-h">Top projects <span class="dim">// 30d spend</span></h3>
+          ${top5.map(p => `<div class="vd-row"><span class="pn">${p.id}</span>
+            <div><div class="vd-bar" style="width:${(p.cost / maxC * 100).toFixed(0)}%" data-tip="${p.path} · $${p.cost.toFixed(2)} · ${p.sessions} sessions"></div></div>
+            <span class="pv">$${p.cost.toFixed(2)}</span></div>`).join('')}
+        </div>
+        <div class="vd-mod"><h3 class="vd-h">Systems <span class="dim">// MCP + plugins</span></h3>
+          ${VD_SYSTEMS.map(x => `<div class="vd-sys"><span class="lamp ${x.on ? 'on' : 'off'}"></span><span>${x.n}</span><span class="k">${x.k}</span><span class="s">${x.s}</span></div>`).join('')}
+        </div>
+      </section>
+      <section class="vd-center">
+        ${vdGauge()}
+        <div class="vd-readouts">
+          <div><div class="v">182M</div><div class="l">TOKENS</div></div>
+          <div><div class="v">96</div><div class="l">SESSIONS</div></div>
+          <div><div class="v">61%</div><div class="l">CACHE</div></div>
+          <div><div class="v">48</div><div class="l">PROJECTS</div></div>
+        </div>
+        <button class="vd-orb ${st === 'running' ? 'busy' : ''}" data-act="ask-drawer" data-id="full-sweep" aria-label="Ask Claude — full system sweep">${IC.spark}</button>
+        <div class="vd-orb-label">Ask Claude // full sweep${st === 'done' ? ' · ✓ just now' : ''}</div>
+      </section>
+      <section>
+        <div class="vd-mod"><h3 class="vd-h">Model loadout <span class="dim">// 14d</span></h3>
+          ${MODEL_TOTALS.map(m => `<div class="vd-row"><span class="pn">${m.name}${m.longCtx ? ' [1M]' : ''}</span>
+            <div><div class="vd-bar" style="width:${(m.total / MODEL_TOTALS[0].total * 100).toFixed(0)}%" data-tip="${m.id} · $${m.total.toFixed(2)} over 14 days"></div></div>
+            <span class="pv">$${m.total.toFixed(2)}</span></div>`).join('')}
+        </div>
+        <div class="vd-mod"><h3 class="vd-h">Live feed <span class="dim">// history.jsonl</span> <span class="vd-caret">▌</span></h3>
+          ${ACTIVITY.slice(0, 6).map(a => `<div class="act-item"><div class="meta"><span>${a.t}</span><span class="proj">${a.p}</span></div><div class="q">${a.q}</div></div>`).join('')}
+        </div>
+      </section>
+    </div>`;
+  }
+  const advPanel = state.advTarget === 'full-sweep' ? `<aside class="vd-adv">
+    <div class="dhead"><span style="color:var(--cyan)">${IC.spark}</span><b>ADVISOR // FULL SWEEP</b>
+      <button class="x" data-act="close-drawer" aria-label="Close advisor">×</button></div>
+    ${advBody('full-sweep')}
+  </aside>` : '';
+  return `<div class="vd">
+    <header class="vd-topbar">
+      <span>CLAUDE ADMIN CENTER <span class="dim">// OPERATIONS OVERVIEW</span></span>
+      <span>D:\\claude-config &nbsp;·&nbsp; <span class="ok">ALL SYSTEMS NOMINAL</span></span>
+    </header>
+    ${body}
+    ${advPanel}
+    <nav class="vd-dock">${SECTIONS.map(s => `<button class="vd-dockbtn ${state.page === s ? 'on' : ''}" data-act="nav" data-id="${s}">${s}</button>`).join('')}</nav>
+  </div>`;
+}
+
+/* ============================= shell ============================= */
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = state.variant === 'A' ? renderA() : state.variant === 'B' ? renderB() : state.variant === 'C' ? renderC() : renderD();
+  document.getElementById('proto-label').textContent = VARIANTS[state.variant];
+}
+function setVariant(v) {
+  state.variant = v;
+  state.page = (v === 'B' || v === 'D') ? 'home' : 'Projects';
+  state.detailOf = null; state.advTarget = null; state.bOpen = null;
+  try { history.replaceState(null, '', '?variant=' + v); } catch (e) { /* sandboxed — in-memory only */ }
+  render();
+}
+function cycle(dir) {
+  const keys = Object.keys(VARIANTS);
+  setVariant(keys[(keys.indexOf(state.variant) + dir + keys.length) % keys.length]);
+}
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const act = el.dataset.act, id = el.dataset.id;
+  if (el.tagName === 'A') e.preventDefault();
+  if (act === 'prev') return cycle(-1);
+  if (act === 'next') return cycle(1);
+  if (act === 'nav') { state.page = id === 'home' ? 'home' : id; state.detailOf = null; return render(); }
+  if (act === 'open-detail') { state.page = 'detail'; state.detailOf = id; return render(); }
+  if (act === 'toggle-table') { state.usageTable = !state.usageTable; return render(); }
+  if (act === 'close-drawer') { state.advTarget = null; return render(); }
+  if (act === 'ask' ) { startAdvisor(id); return render(); }
+  if (act === 'ask-drawer') { e.stopPropagation(); state.advTarget = id; startAdvisor(id); return render(); }
+  if (act === 'ask-inline') {
+    if (state.bOpen === id) { state.bOpen = null; }
+    else { state.bOpen = id; if (state.adv[advKey(id)] !== 'done') startAdvisor(id); }
+    return render();
+  }
+  if (act === 'ask-queue') {
+    e.stopPropagation();
+    if (!state.queue.find(x => x.id === id)) state.queue.push({ id, st: 'queued', open: false });
+    state.trayOpen = true;
+    const item = state.queue.find(x => x.id === id);
+    if (item.st === 'queued') { item.st = 'running'; startAdvisor(id); }
+    return render();
+  }
+  if (act === 'tray-toggle') { state.trayOpen = !state.trayOpen; return render(); }
+  if (act === 'tray-open') { const q = state.queue.find(x => x.id === id); q.open = !q.open; return render(); }
+});
+document.addEventListener('keydown', e => {
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+  if (e.key === 'ArrowLeft') cycle(-1);
+  if (e.key === 'ArrowRight') cycle(1);
+});
+
+// shared tooltip for [data-tip]
+const tip = document.getElementById('tooltip');
+document.addEventListener('mouseover', e => {
+  const el = e.target.closest('[data-tip]');
+  if (!el) { tip.style.display = 'none'; return; }
+  tip.textContent = el.dataset.tip;
+  tip.style.display = 'block';
+});
+document.addEventListener('mousemove', e => {
+  if (tip.style.display !== 'block') return;
+  const x = Math.min(e.clientX + 12, window.innerWidth - tip.offsetWidth - 8);
+  const y = Math.max(e.clientY - tip.offsetHeight - 10, 6);
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+});
+
+render();
+</script>
