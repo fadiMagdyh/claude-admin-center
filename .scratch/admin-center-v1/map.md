@@ -19,6 +19,9 @@ A working, read-only v1 of **Claude Admin Center** running locally: a Vite + Rea
 
 <!-- one line per closed ticket: gist + link -->
 
+- [Research: spawning headless Claude sessions from Node on Windows](./issues/01-research-headless-claude.md) — advisor runs use `claude -p` + `--json-schema` for structured output, `--allowedTools`/`dontAsk` for read-only safety, and `--no-session-persistence` to avoid transcript pollution; findings in [docs/research/headless-claude-invocation.md](../../docs/research/headless-claude-invocation.md).
+- [Research: model pricing table for the usage ledger](./issues/02-research-model-pricing.md) — all observed model ids priced; `[1m]` suffix is price-neutral; cache buckets priced separately (5m 1.25×, 1h 2×, read 0.1×); editable dated `prices.json` shape ready in [docs/research/model-pricing.md](../../docs/research/model-pricing.md).
+
 ## Not yet specified
 
 - **Build: section pages** — one build slice per dashboard section (Projects, Sessions, Usage, Models, Skills, Plugins, MCPs, Activity). Can't slice until the domain model (03) and UI prototype (04) settle what each page shows.

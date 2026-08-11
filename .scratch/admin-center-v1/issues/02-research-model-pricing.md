@@ -1,7 +1,7 @@
 # Research: model pricing table for the usage ledger
 
 Type: research
-Status: claimed
+Status: resolved
 
 ## Question
 
@@ -14,3 +14,7 @@ Transcripts carry tokens but no dollars, so the dashboard computes cost from a m
 - Recommended shape for an *editable* local price table (JSON file checked into the repo) with a fallback rule for unknown model ids (flag as unpriced, don't guess).
 
 Primary sources: Anthropic docs/pricing pages via the `claude-api` skill; verify against the web, don't answer from memory. Answer feeds ticket 06 (ledger design).
+
+## Answer
+
+Full findings incl. the ready-to-use `prices.json` shape: [docs/research/model-pricing.md](../../../docs/research/model-pricing.md). Gist: all seven observed model ids priced from the official pricing doc (fable-5 $10/$50, opus-4-7 & 4-8 $5/$25, sonnet-4-6 $3/$15, haiku-4-5 $1/$5 per MTok). **`[1m]` is price-neutral** — 4.6+ models include the 1M window at standard pricing — so normalization strips `[1m]` and `-YYYYMMDD` suffixes (lookup order: exact → stripped; no match → "unpriced", never guess). Cache: 5m write 1.25×, 1h write 2×, read 0.1×; top-level `cache_creation_input_tokens` is the SUM of the two buckets — don't double-count. Web search $0.01/request; web fetch free. Price entries are dated (`effective_from`) to survive price changes.

@@ -6,6 +6,7 @@ Claude Instructions:
 * if any part of the repo works don't enhance it unless i explicitly asked for it
 * don't over engineer the implementation, keep it simple and clean 
 * if there was any mistakes or misunderstanding happened during sessions add it to lessons learned at the bottom to avoid it in the future
+* there is only one developer for this project, so no need to PRs 
 
 
 
