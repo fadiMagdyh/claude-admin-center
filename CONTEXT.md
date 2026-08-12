@@ -73,3 +73,13 @@ The per-project resolved on/off state of a plugin, skill, or MCP Server after gl
 **Activity**:
 The feed of submitted prompts from the global `history.jsonl`.
 _Avoid_: audit log, events
+
+### Advisor
+
+**Advisor Run**:
+One spawn of headless Claude against a single object (or the whole setup), from request to persisted outcome. Leaves no transcript behind.
+_Avoid_: analysis, check, ask
+
+**Recommendation**:
+One finding produced by an Advisor Run: severity, finding, suggested action. Persisted with its run; rendered inline on the object.
+_Avoid_: advice, tip, insight
