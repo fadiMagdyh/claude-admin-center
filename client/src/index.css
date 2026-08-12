@@ -444,6 +444,9 @@ h1, h2, h3 {
   color: var(--muted);
   border-style: dashed;
 }
+.hud-badge.pinned {
+  color: var(--good-text);
+}
 .hud-ask {
   color: var(--cyan);
   padding: 3px 6px;

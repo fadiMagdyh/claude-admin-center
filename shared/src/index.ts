@@ -253,3 +253,48 @@ export type UsageResponse = {
   /** Unpriced policy summary: Turns excluded from dollar totals and the base Models they came from. */
   unpriced: { turns: number; models: string[] }
 }
+
+export type ModelsRange = '30' | 'all'
+
+/** Today's price-table rates for a Model, USD per MTok; null when Unpriced. */
+export type ModelPrice = {
+  input: number
+  output: number
+  cacheRead: number
+}
+
+/** One base Model in the Models section, [1m] collapsed, all-Ledger aggregates. */
+export type ModelRow = {
+  /** Base model id. */
+  model: string
+  /** Some collapsed Turns used the [1m] long-context variant. */
+  longContext: boolean
+  /** This Model is the default pinned in <configRoot>/settings.json (compared after [1m] collapse). */
+  pinnedDefault: boolean
+  /** ISO timestamps of the Model's oldest and newest Turn in range. */
+  firstTs: string
+  lastTs: string
+  turns: number
+  /** Distinct Sessions with at least one Turn on this Model. */
+  sessions: number
+  inputTokens: number
+  outputTokens: number
+  cacheRead: number
+  /** 5m + 1h cache writes combined. */
+  cacheWrite: number
+  /** All token buckets summed. */
+  tokens: number
+  costUsd: number | null
+  unpricedTurns: number
+  price: ModelPrice | null
+}
+
+export type ModelsResponse = {
+  range: ModelsRange
+  /** Base id of the settings.json model pin ([1m] collapsed); null when nothing is pinned. */
+  pinnedModel: string | null
+  /** Highest cost first. */
+  models: ModelRow[]
+  /** Unpriced policy summary: Turns excluded from dollar totals and the base Models they came from. */
+  unpriced: { turns: number; models: string[] }
+}
