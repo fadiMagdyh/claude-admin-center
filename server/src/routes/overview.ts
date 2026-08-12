@@ -4,6 +4,7 @@ import { Hono } from 'hono'
 import type { OverviewActivityEntry, OverviewModel, OverviewResponse, OverviewSystem } from 'shared'
 import { ledgerDb } from '../ledger/db.js'
 import { ledgerStatus, modelTotals, overviewNumbers } from '../ledger/queries.js'
+import { listActivity } from '../readers/activity.js'
 import { readRegistry } from '../readers/claudeJson.js'
 import { resolveConfigRoot } from '../readers/configRoot.js'
 
@@ -106,28 +107,11 @@ function pluginSystems(configRoot: string): OverviewSystem[] {
   }))
 }
 
-/** Last 8 prompts from <configRoot>/history.jsonl, newest first. */
+/** Last 8 prompts from the Activity feed, newest first. */
 function recentActivity(configRoot: string): OverviewActivityEntry[] {
-  let raw: string
-  try {
-    raw = readFileSync(join(configRoot, 'history.jsonl'), 'utf8')
-  } catch {
-    return []
-  }
-  const entries: OverviewActivityEntry[] = []
-  for (const line of raw.split('\n')) {
-    if (!line.trim()) continue
-    try {
-      const record = JSON.parse(line) as { display?: string; timestamp?: number; project?: string }
-      if (typeof record.display !== 'string' || typeof record.timestamp !== 'number') continue
-      entries.push({
-        display: record.display,
-        timestamp: record.timestamp,
-        project: lastPathSegment(record.project ?? '')
-      })
-    } catch {
-      // skip malformed lines
-    }
-  }
-  return entries.slice(-8).reverse()
+  return listActivity(configRoot, { limit: 8 }).entries.map((entry) => ({
+    display: entry.display,
+    timestamp: entry.timestamp,
+    project: entry.projectName
+  }))
 }

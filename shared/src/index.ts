@@ -391,6 +391,25 @@ export type McpServersResponse = {
   servers: McpServerRow[]
 }
 
+/** One submitted prompt in the Activity feed, from the config root's history.jsonl. */
+export type ActivityEntry = {
+  display: string
+  /** Epoch milliseconds. */
+  timestamp: number
+  /** Project cwd the prompt was submitted in, forward-slash normalized to match Registry keys; "" when unrecorded. */
+  project: string
+  /** Last path segment of project; "" when unrecorded. */
+  projectName: string
+  sessionId: string | null
+}
+
+export type ActivityResponse = {
+  /** Matching entries before the limit was applied. */
+  total: number
+  /** Newest first. */
+  entries: ActivityEntry[]
+}
+
 export type ModelsResponse = {
   range: ModelsRange
   /** Base id of the settings.json model pin ([1m] collapsed); null when nothing is pinned. */

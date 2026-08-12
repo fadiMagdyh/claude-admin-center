@@ -598,6 +598,20 @@ h1, h2, h3 {
   color: var(--page);
   font-weight: 600;
 }
+.hud-select {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--cyan-line);
+  background: var(--page);
+  color: var(--ink2);
+  margin-left: auto;
+}
+.hud-select:hover {
+  color: var(--cyan);
+}
 .hud-tiles {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
