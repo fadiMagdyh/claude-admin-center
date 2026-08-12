@@ -24,9 +24,17 @@ export type SkillUsageEntry = {
   lastUsedAt?: number
 }
 
+/** Lifetime counter for one pluginUsage key ("plugin@marketplace") — uninstalled plugins keep theirs. */
+export type PluginUsageEntry = {
+  usageCount?: number
+  /** Epoch ms. */
+  lastUsedAt?: number
+}
+
 type ClaudeJson = {
   projects?: Record<string, RegistryProject>
   skillUsage?: Record<string, SkillUsageEntry>
+  pluginUsage?: Record<string, PluginUsageEntry>
 }
 
 type CacheEntry = {
@@ -76,4 +84,9 @@ export function readRegistry(configRoot: string): Record<string, RegistryProject
 /** Lifetime skillUsage counters from .claude.json, keyed "plugin:skill" or bare skill name. */
 export function readSkillUsage(configRoot: string): Record<string, SkillUsageEntry> {
   return readClaudeJson(configRoot).skillUsage ?? {}
+}
+
+/** Lifetime pluginUsage counters from .claude.json, keyed "plugin@marketplace". */
+export function readPluginUsage(configRoot: string): Record<string, PluginUsageEntry> {
+  return readClaudeJson(configRoot).pluginUsage ?? {}
 }

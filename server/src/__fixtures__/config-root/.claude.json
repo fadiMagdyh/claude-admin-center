@@ -18,5 +18,9 @@
   "skillUsage": {
     "mattpocock-skills:fixture-skill": { "usageCount": 5, "lastUsedAt": 1786550000000 },
     "fixture-ghost": { "usageCount": 2, "lastUsedAt": 1786551000000 }
+  },
+  "pluginUsage": {
+    "mattpocock-skills@claude-plugins-official": { "usageCount": 9, "lastUsedAt": 1786552000000 },
+    "retired-plugin@claude-plugins-official": { "usageCount": 4, "lastUsedAt": 1786400000000 }
   }
 }

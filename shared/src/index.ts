@@ -326,6 +326,41 @@ export type SkillsResponse = {
   skills: SkillRow[]
 }
 
+/** One plugin: an installed_plugins.json entry, or a historical row known only from pluginUsage. */
+export type PluginRow = {
+  /** "<plugin>@<marketplace>" — the enabledPlugins / pluginUsage key, and the advisor objectKey. */
+  key: string
+  name: string
+  marketplace: string
+  /** False: uninstalled historical row — pluginUsage remembers it, installed_plugins.json does not. */
+  installed: boolean
+  version: string | null
+  /** Install scope from installed_plugins.json, e.g. "user" or "project". */
+  scope: string | null
+  /** ISO timestamp of the install. */
+  installedAt: string | null
+  /** SKILL.md count bundled in the installed version. */
+  skillCount: number
+  /** From the marketplace catalog; null when the catalog or its entry is missing. */
+  description: string | null
+  /** Lifetime counter from .claude.json pluginUsage; null when the plugin never appears there. */
+  usageCount: number | null
+  /** Epoch ms of the last pluginUsage hit. */
+  lastUsedAtMs: number | null
+  /** Ledger Turns attributed to this plugin (attributionPlugin). */
+  ledgerTurns: number
+  /** ISO timestamp of the newest attributed Turn. */
+  ledgerLastTs: string | null
+  /** Global enabledPlugins state; null when settings have no entry. */
+  enabled: boolean | null
+  /** Projects whose own settings mention this plugin (indicator only, no eager matrix). */
+  overriddenInProjects: number
+}
+
+export type PluginsResponse = {
+  plugins: PluginRow[]
+}
+
 export type ModelsResponse = {
   range: ModelsRange
   /** Base id of the settings.json model pin ([1m] collapsed); null when nothing is pinned. */

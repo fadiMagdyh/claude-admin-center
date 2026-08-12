@@ -4,6 +4,7 @@ import type { SkillRow, SkillStatus, SkillsResponse } from 'shared'
 import type { LedgerDb } from '../ledger/db.js'
 import { attributionTotals } from '../ledger/queries.js'
 import { readRegistry, readSkillUsage } from './claudeJson.js'
+import { installDir, readInstalledPlugins, readSettingsFile, registryProjectSettings, splitPluginKey } from './installedPlugins.js'
 
 /** A SkillRow being assembled, plus the join keys the response never carries. */
 type Skill = SkillRow & {
@@ -60,8 +61,13 @@ export function listSkills(configRoot: string, db: LedgerDb | null): SkillsRespo
 
 // ---------- plugin-bundled skills ----------
 
-type InstalledPlugins = {
-  plugins?: Record<string, Array<{ version?: string; installPath?: string }>>
+/** Bundled-skill count per installed plugin key ("plugin@marketplace"), for the plugins reader. */
+export function pluginSkillCounts(configRoot: string): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const skill of pluginSkills(configRoot)) {
+    counts.set(skill.pluginKey!, (counts.get(skill.pluginKey!) ?? 0) + 1)
+  }
+  return counts
 }
 
 /**
@@ -69,22 +75,12 @@ type InstalledPlugins = {
  * points at the exact cache dir — other cached versions are ignored).
  */
 function pluginSkills(configRoot: string): Skill[] {
-  let installed: InstalledPlugins
-  try {
-    installed = JSON.parse(readFileSync(join(configRoot, 'plugins', 'installed_plugins.json'), 'utf8')) as InstalledPlugins
-  } catch {
-    return []
-  }
-
   const skills: Skill[] = []
   const seen = new Set<string>()
-  for (const [pluginKey, installs] of Object.entries(installed.plugins ?? {})) {
-    const atIndex = pluginKey.lastIndexOf('@')
-    const plugin = atIndex === -1 ? pluginKey : pluginKey.slice(0, atIndex)
-    const marketplace = atIndex === -1 ? '' : pluginKey.slice(atIndex + 1)
+  for (const [pluginKey, installs] of Object.entries(readInstalledPlugins(configRoot))) {
+    const { plugin, marketplace } = splitPluginKey(pluginKey)
     for (const install of installs) {
-      const versionDir =
-        install.installPath ?? join(configRoot, 'plugins', 'cache', marketplace, plugin, install.version ?? 'unknown')
+      const versionDir = installDir(configRoot, plugin, marketplace, install)
       for (const found of walkSkillDirs(join(versionDir, 'skills'))) {
         const front = readFrontmatter(join(found.dir, 'SKILL.md'))
         const name = front.name ?? found.segments.at(-1)!
@@ -200,18 +196,13 @@ function builtInGhost(usageKey: string): Skill {
 
 // ---------- enablement ----------
 
-type ProjectSettings = {
-  enabledPlugins: Record<string, boolean>
-  skillOverrides: Record<string, unknown>
-}
-
 /**
  * Global enabledPlugins state for plugin rows, plus the overridden-in-N-projects
  * count: Registry projects whose own settings files mention the owning plugin
  * or the skill itself (Effective Enablement stays lazy on the Project detail).
  */
 function applyEnablement(configRoot: string, skills: Skill[]): void {
-  const globalPlugins = readSettings(join(configRoot, 'settings.json')).enabledPlugins
+  const globalPlugins = readSettingsFile(join(configRoot, 'settings.json')).enabledPlugins
   const projectSettings = registryProjectSettings(configRoot)
   for (const skill of skills) {
     if (skill.pluginKey) skill.enabled = globalPlugins[skill.pluginKey] ?? null
@@ -220,33 +211,6 @@ function applyEnablement(configRoot: string, skills: Skill[]): void {
         (skill.pluginKey !== null && skill.pluginKey in settings.enabledPlugins) ||
         skill.matchKeys.some((key) => key in settings.skillOverrides)
     ).length
-  }
-}
-
-/** Each Registry project's settings.json + settings.local.json merged (local wins). */
-function registryProjectSettings(configRoot: string): ProjectSettings[] {
-  const settings: ProjectSettings[] = []
-  const seenCwds = new Set<string>()
-  for (const cwd of Object.keys(readRegistry(configRoot))) {
-    const canonical = cwd.replace(/\\/g, '/').toLowerCase()
-    if (seenCwds.has(canonical)) continue
-    seenCwds.add(canonical)
-    const base = readSettings(join(cwd, '.claude', 'settings.json'))
-    const local = readSettings(join(cwd, '.claude', 'settings.local.json'))
-    settings.push({
-      enabledPlugins: { ...base.enabledPlugins, ...local.enabledPlugins },
-      skillOverrides: { ...base.skillOverrides, ...local.skillOverrides }
-    })
-  }
-  return settings
-}
-
-function readSettings(settingsPath: string): ProjectSettings {
-  try {
-    const parsed = JSON.parse(readFileSync(settingsPath, 'utf8')) as Partial<ProjectSettings>
-    return { enabledPlugins: parsed.enabledPlugins ?? {}, skillOverrides: parsed.skillOverrides ?? {} }
-  } catch {
-    return { enabledPlugins: {}, skillOverrides: {} }
   }
 }
 

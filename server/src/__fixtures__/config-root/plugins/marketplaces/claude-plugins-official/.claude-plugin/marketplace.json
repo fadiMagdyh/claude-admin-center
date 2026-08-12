@@ -1,0 +1,7 @@
+{
+  "name": "claude-plugins-official",
+  "plugins": [
+    { "name": "mattpocock-skills", "description": "Fixture catalog description for mattpocock-skills." },
+    { "name": "retired-plugin", "description": "A fixture plugin that was uninstalled." }
+  ]
+}
