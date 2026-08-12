@@ -6,13 +6,17 @@ import { app } from '../app.js'
 
 const fixtureRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '__fixtures__', 'config-root')
 const originalConfigDir = process.env.CLAUDE_CONFIG_DIR
+const originalLedgerDbPath = process.env.LEDGER_DB_PATH
 
 describe('GET /api/overview', () => {
   beforeAll(() => {
     process.env.CLAUDE_CONFIG_DIR = fixtureRoot
+    process.env.LEDGER_DB_PATH = ':memory:' // empty Ledger → 0 TURNS + null readouts
   })
   afterAll(() => {
     process.env.CLAUDE_CONFIG_DIR = originalConfigDir
+    if (originalLedgerDbPath === undefined) delete process.env.LEDGER_DB_PATH
+    else process.env.LEDGER_DB_PATH = originalLedgerDbPath
   })
 
   it('assembles the overview from the fixture config root', async () => {
@@ -31,7 +35,7 @@ describe('GET /api/overview', () => {
     expect(body.systems).toEqual([
       { name: 'github', kind: 'mcp-local', on: true, status: 'CONFIGURED' },
       { name: 'mattpocock-skills', kind: 'plugin', on: true, status: '1.2.3' },
-      { name: 'ledger', kind: 'ledger', on: false, status: 'OFFLINE' }
+      { name: 'ledger', kind: 'ledger', on: true, status: '0 TURNS' }
     ])
 
     expect(body.activity).toEqual([

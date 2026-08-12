@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Hono } from 'hono'
 import type { OverviewActivityEntry, OverviewResponse, OverviewSystem } from 'shared'
+import { ledgerDb } from '../ledger/db.js'
+import { ledgerStatus, overviewNumbers } from '../ledger/queries.js'
 import { readRegistry } from '../readers/claudeJson.js'
 import { resolveConfigRoot } from '../readers/configRoot.js'
 
@@ -10,6 +12,7 @@ export const overview = new Hono()
 overview.get('/', (c) => {
   const configRoot = resolveConfigRoot()
   const registry = readRegistry(configRoot)
+  const ledger = ledgerFields()
 
   const body: OverviewResponse = {
     configRoot,
@@ -17,18 +20,32 @@ overview.get('/', (c) => {
       count: Object.keys(registry).length,
       topByLastCost: topProjectsByLastCost(registry)
     },
-    systems: [...mcpSystems(registry), ...pluginSystems(configRoot), LEDGER_OFFLINE],
+    systems: [...mcpSystems(registry), ...pluginSystems(configRoot), ledger.system],
     activity: recentActivity(configRoot),
-    // Ledger-backed aggregates — stay null until the Ledger build lands.
-    spend14d: null,
-    tokens14d: null,
-    sessions14d: null,
-    cachePct: null
+    spend14d: ledger.spend14d,
+    tokens14d: ledger.tokens14d,
+    sessions14d: ledger.sessions14d,
+    cachePct: ledger.cachePct
   }
   return c.json(body)
 })
 
-const LEDGER_OFFLINE: OverviewSystem = { name: 'ledger', kind: 'ledger', on: false, status: 'OFFLINE' }
+type LedgerFields = Pick<OverviewResponse, 'spend14d' | 'tokens14d' | 'sessions14d' | 'cachePct'> & { system: OverviewSystem }
+
+const LEDGER_NULLS = { spend14d: null, tokens14d: null, sessions14d: null, cachePct: null }
+
+/** Landing readouts from the Ledger; nulls when it is empty or unavailable. */
+function ledgerFields(): LedgerFields {
+  try {
+    const db = ledgerDb()
+    const status = ledgerStatus(db)
+    const system: OverviewSystem = { name: 'ledger', kind: 'ledger', on: true, status: `${status.turns} TURNS` }
+    if (status.turns === 0) return { system, ...LEDGER_NULLS }
+    return { system, ...overviewNumbers(db) }
+  } catch {
+    return { system: { name: 'ledger', kind: 'ledger', on: false, status: 'OFFLINE' }, ...LEDGER_NULLS }
+  }
+}
 
 function lastPathSegment(p: string): string {
   return p.split(/[\\/]/).filter(Boolean).at(-1) ?? p

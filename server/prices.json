@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "currency": "USD",
+  "unit": "per_mtok",
+  "sources": ["https://platform.claude.com/docs/en/about-claude/pricing.md (2026-08-11)"],
+  "server_tools": {
+    "web_search_request": { "usd_per_request": 0.01 },
+    "web_fetch_request": { "usd_per_request": 0.0 }
+  },
+  "models": {
+    "claude-fable-5": {
+      "match": ["claude-fable-5", "claude-fable-5\\[1m\\]"],
+      "prices": [{ "effective_from": "2026-01-01", "input": 10.0, "output": 50.0,
+                   "cache_write_5m": 12.5, "cache_write_1h": 20.0, "cache_read": 1.0,
+                   "long_context": null }]
+    },
+    "claude-opus-4-7": {
+      "match": ["claude-opus-4-7", "claude-opus-4-7\\[1m\\]"],
+      "prices": [{ "effective_from": "2026-01-01", "input": 5.0, "output": 25.0,
+                   "cache_write_5m": 6.25, "cache_write_1h": 10.0, "cache_read": 0.5,
+                   "long_context": null }]
+    },
+    "claude-opus-4-8": {
+      "match": ["claude-opus-4-8"],
+      "prices": [{ "effective_from": "2026-01-01", "input": 5.0, "output": 25.0,
+                   "cache_write_5m": 6.25, "cache_write_1h": 10.0, "cache_read": 0.5,
+                   "long_context": null }]
+    },
+    "claude-sonnet-4-6": {
+      "match": ["claude-sonnet-4-6"],
+      "prices": [{ "effective_from": "2025-01-01", "input": 3.0, "output": 15.0,
+                   "cache_write_5m": 3.75, "cache_write_1h": 6.0, "cache_read": 0.3,
+                   "long_context": null }]
+    },
+    "claude-haiku-4-5": {
+      "match": ["claude-haiku-4-5", "claude-haiku-4-5-\\d{8}"],
+      "prices": [{ "effective_from": "2025-10-01", "input": 1.0, "output": 5.0,
+                   "cache_write_5m": 1.25, "cache_write_1h": 2.0, "cache_read": 0.1,
+                   "long_context": null }]
+    }
+  },
+  "fallback": { "policy": "unpriced" }
+}
