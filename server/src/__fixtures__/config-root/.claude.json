@@ -15,6 +15,7 @@
       "allowedTools": []
     }
   },
+  "claudeAiMcpEverConnected": ["claude.ai Fixture Board"],
   "skillUsage": {
     "mattpocock-skills:fixture-skill": { "usageCount": 5, "lastUsedAt": 1786550000000 },
     "fixture-ghost": { "usageCount": 2, "lastUsedAt": 1786551000000 }

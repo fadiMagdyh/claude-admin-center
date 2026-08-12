@@ -1,6 +1,13 @@
 import { readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
+/** A stdio MCP Server definition in a Registry entry. env is deliberately not read — it holds secrets. */
+export type McpServerDefinition = {
+  type?: string
+  command?: string
+  args?: string[]
+}
+
 /** The slice of a Registry entry the dashboard reads. Unknown fields are ignored. */
 export type RegistryProject = {
   lastCost?: number
@@ -11,7 +18,7 @@ export type RegistryProject = {
   lastTotalOutputTokens?: number
   lastTotalCacheCreationInputTokens?: number
   lastTotalCacheReadInputTokens?: number
-  mcpServers?: Record<string, { type?: string; command?: string }>
+  mcpServers?: Record<string, McpServerDefinition>
   enabledMcpjsonServers?: string[]
   disabledMcpjsonServers?: string[]
   disabledMcpServers?: string[]
@@ -35,6 +42,8 @@ type ClaudeJson = {
   projects?: Record<string, RegistryProject>
   skillUsage?: Record<string, SkillUsageEntry>
   pluginUsage?: Record<string, PluginUsageEntry>
+  /** Display names of claude.ai managed connectors that have ever connected. */
+  claudeAiMcpEverConnected?: string[]
 }
 
 type CacheEntry = {
@@ -89,4 +98,9 @@ export function readSkillUsage(configRoot: string): Record<string, SkillUsageEnt
 /** Lifetime pluginUsage counters from .claude.json, keyed "plugin@marketplace". */
 export function readPluginUsage(configRoot: string): Record<string, PluginUsageEntry> {
   return readClaudeJson(configRoot).pluginUsage ?? {}
+}
+
+/** Display names of claude.ai managed connectors that have ever connected. */
+export function readMcpEverConnected(configRoot: string): string[] {
+  return readClaudeJson(configRoot).claudeAiMcpEverConnected ?? []
 }

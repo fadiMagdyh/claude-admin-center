@@ -361,6 +361,36 @@ export type PluginsResponse = {
   plugins: PluginRow[]
 }
 
+/** Where an MCP Server comes from: a project's stdio definition, or a claude.ai connector. */
+export type McpProvenance = 'local' | 'managed'
+
+/** One MCP Server in the unified list, whatever its provenance (one list, one term). */
+export type McpServerRow = {
+  /** "<provenance>:<name>" — the advisor objectKey. */
+  key: string
+  name: string
+  provenance: McpProvenance
+  /** Local only: "command firstArg" from the stdio definition — never the full args or env. */
+  commandSummary: string | null
+  /** Local only: last path segments of the Registry projects defining this server. */
+  definedInProjects: string[]
+  /** Local only: defining projects whose enable/disable arrays turn this server off. */
+  disabledInProjects: number
+  /** Managed only: epoch ms of the auth-cache entry; null for ever-connected-only rows. */
+  lastAuthMs: number | null
+  /** Managed only: "mcpsrv_…" id from the auth cache; null when the cache has none. */
+  managedId: string | null
+  /** Managed only: the connector appears in claudeAiMcpEverConnected. */
+  everConnected: boolean
+}
+
+export type McpServersResponse = {
+  localCount: number
+  managedCount: number
+  /** Local rows first, then managed, each sorted by name. */
+  servers: McpServerRow[]
+}
+
 export type ModelsResponse = {
   range: ModelsRange
   /** Base id of the settings.json model pin ([1m] collapsed); null when nothing is pinned. */

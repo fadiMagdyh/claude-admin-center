@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import type { HealthResponse } from 'shared'
+import { mcp } from './routes/mcp.js'
 import { models } from './routes/models.js'
 import { overview } from './routes/overview.js'
 import { plugins } from './routes/plugins.js'
@@ -15,6 +16,7 @@ app.get('/api/health', (c) => {
   return c.json(body)
 })
 
+app.route('/api/mcp', mcp)
 app.route('/api/models', models)
 app.route('/api/overview', overview)
 app.route('/api/plugins', plugins)

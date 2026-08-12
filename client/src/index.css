@@ -463,6 +463,19 @@ h1, h2, h3 {
   color: var(--muted);
   border-style: dashed;
 }
+.hud-badge.prov-local {
+  color: var(--cyan);
+}
+.hud-badge.prov-managed {
+  color: #c98500;
+}
+.hud-badge.conn {
+  color: var(--good-text);
+}
+.hud-badge.noconn {
+  color: var(--muted);
+  border-style: dashed;
+}
 /* Built-in ghost rows: derived from usage data only, no SKILL.md on disk. */
 .hud-table tr.ghost .pname {
   color: var(--muted);
