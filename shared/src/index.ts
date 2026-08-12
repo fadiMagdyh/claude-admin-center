@@ -289,6 +289,43 @@ export type ModelRow = {
   price: ModelPrice | null
 }
 
+export type SkillSource = 'plugin' | 'project' | 'built-in'
+
+/** From the SKILL.md path inside a plugin: deprecated/ and in-progress/ subtrees. */
+export type SkillStatus = 'normal' | 'deprecated' | 'in-progress'
+
+/** One Skill in the unified list across all three Skill Sources (decision #5: all statuses included). */
+export type SkillRow = {
+  /** Stable advisor key: "<source>:<owner>:<name>" (owner = plugin name, project cwd, or "" for built-ins). */
+  key: string
+  name: string
+  source: SkillSource
+  status: SkillStatus
+  /** Built-in ghost row: known only from usage data, no SKILL.md on disk. */
+  ghost: boolean
+  /** Owning plugin (plugin source, or the prefix of a ghost's usage key); null otherwise. */
+  plugin: string | null
+  /** Owning project cwd (project source only). */
+  projectPath: string | null
+  description: string | null
+  /** Lifetime counter from .claude.json skillUsage; null when the skill never appears there. */
+  usageCount: number | null
+  /** Epoch ms of the last skillUsage hit. */
+  lastUsedAtMs: number | null
+  /** Ledger Turns attributed to this Skill (attributionSkill). */
+  ledgerTurns: number
+  /** ISO timestamp of the newest attributed Turn. */
+  ledgerLastTs: string | null
+  /** Global enablement of the owning plugin; project skills are always on; null when unknown (built-ins, no global entry). */
+  enabled: boolean | null
+  /** Projects whose own settings mention the owning plugin or this skill (decision #6: indicator only, no eager matrix). */
+  overriddenInProjects: number
+}
+
+export type SkillsResponse = {
+  skills: SkillRow[]
+}
+
 export type ModelsResponse = {
   range: ModelsRange
   /** Base id of the settings.json model pin ([1m] collapsed); null when nothing is pinned. */

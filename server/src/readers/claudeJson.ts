@@ -17,8 +17,16 @@ export type RegistryProject = {
   disabledMcpServers?: string[]
 }
 
+/** Lifetime counter for one skillUsage key ("plugin:skill" or a bare skill name). */
+export type SkillUsageEntry = {
+  usageCount?: number
+  /** Epoch ms. */
+  lastUsedAt?: number
+}
+
 type ClaudeJson = {
   projects?: Record<string, RegistryProject>
+  skillUsage?: Record<string, SkillUsageEntry>
 }
 
 type CacheEntry = {
@@ -63,4 +71,9 @@ export function readClaudeJson(configRoot: string): ClaudeJson {
 /** The Registry: the projects map inside .claude.json, keyed by cwd. */
 export function readRegistry(configRoot: string): Record<string, RegistryProject> {
   return readClaudeJson(configRoot).projects ?? {}
+}
+
+/** Lifetime skillUsage counters from .claude.json, keyed "plugin:skill" or bare skill name. */
+export function readSkillUsage(configRoot: string): Record<string, SkillUsageEntry> {
+  return readClaudeJson(configRoot).skillUsage ?? {}
 }

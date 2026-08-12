@@ -4,6 +4,7 @@ import { models } from './routes/models.js'
 import { overview } from './routes/overview.js'
 import { projects } from './routes/projects.js'
 import { sessions } from './routes/sessions.js'
+import { skills } from './routes/skills.js'
 import { usage } from './routes/usage.js'
 
 export const app = new Hono()
@@ -17,4 +18,5 @@ app.route('/api/models', models)
 app.route('/api/overview', overview)
 app.route('/api/projects', projects)
 app.route('/api/sessions', sessions)
+app.route('/api/skills', skills)
 app.route('/api/usage', usage)

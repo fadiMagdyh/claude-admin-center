@@ -447,6 +447,34 @@ h1, h2, h3 {
 .hud-badge.pinned {
   color: var(--good-text);
 }
+.hud-badge.deprecated {
+  color: #ec835a;
+}
+.hud-badge.inprog {
+  color: #c98500;
+}
+.hud-badge.src-plugin {
+  color: var(--cyan);
+}
+.hud-badge.src-project {
+  color: var(--good-text);
+}
+.hud-badge.src-builtin {
+  color: var(--muted);
+  border-style: dashed;
+}
+/* Built-in ghost rows: derived from usage data only, no SKILL.md on disk. */
+.hud-table tr.ghost .pname {
+  color: var(--muted);
+  font-style: italic;
+  font-weight: 400;
+}
+.hud-skill-enab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10.5px;
+}
 .hud-ask {
   color: var(--cyan);
   padding: 3px 6px;

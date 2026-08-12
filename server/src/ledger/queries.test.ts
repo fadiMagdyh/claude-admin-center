@@ -100,6 +100,7 @@ describe('queries over the swept fixture', () => {
     expect(skills).toHaveLength(1)
     expect(skills[0].name).toBe('mattpocock-skills:tdd')
     expect(skills[0].costUsd).toBeCloseTo(COST_A1_SONNET, 10)
+    expect(skills[0].lastTs).toBe('2026-08-01T10:00:05.000Z')
     expect(plugins).toHaveLength(1)
     expect(plugins[0].name).toBe('mattpocock-skills')
   })
