@@ -21,6 +21,16 @@ _Avoid_: cache, database (unqualified)
 **Read Rule**:
 The strategy split: history and cross-transcript aggregates come from the Ledger; everything else is a live disk read with a short cache.
 
+**Turn**:
+One assistant usage record from a transcript — the Ledger's storage grain. Carries raw model id, all token buckets, server-tool counts, and skill/plugin attribution.
+_Avoid_: message, request, iteration
+
+**Sweep**:
+One incremental ingest pass: detect new or grown transcript files and append their unseen Turns to the Ledger. Idempotent — re-sweeping never duplicates.
+
+**Unpriced**:
+A Turn whose model has no match in the price table. Its tokens are shown, but it is excluded from dollar totals, which render as "≥ $X + N unpriced".
+
 ### Projects & sessions
 
 **Project**:
