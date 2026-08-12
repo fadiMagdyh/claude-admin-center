@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { ledgerDb, type LedgerDb } from '../ledger/db.js'
+import { tryLedgerDb } from '../ledger/db.js'
 import { resolveConfigRoot } from '../readers/configRoot.js'
 import { getProject, listProjects } from '../readers/projects.js'
 
@@ -17,11 +17,3 @@ projects.get('/detail', (c) => {
   if (!detail) return c.json({ error: 'no Registry entry for this cwd' }, 404)
   return c.json(detail)
 })
-
-function tryLedgerDb(): LedgerDb | null {
-  try {
-    return ledgerDb()
-  } catch {
-    return null
-  }
-}

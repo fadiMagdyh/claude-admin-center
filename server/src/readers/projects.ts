@@ -4,8 +4,9 @@ import type {
   EnablementRow, ProjectDetailResponse, ProjectLedger30d, ProjectMemory, ProjectRow, ProjectsResponse
 } from 'shared'
 import type { LedgerDb } from '../ledger/db.js'
-import { canonicalCwd, sessionsForCwd, totalsByCwd, type CwdTotals } from '../ledger/queries.js'
+import { canonicalCwd, sessionsForCwd, totalTokens, totalsByCwd, type CwdTotals } from '../ledger/queries.js'
 import { readRegistry, type RegistryProject } from './claudeJson.js'
+import { readLiveSessions } from './liveSessions.js'
 
 const LEDGER_WINDOW_DAYS = 30
 
@@ -218,37 +219,6 @@ function readMemory(configRoot: string, dir: string | undefined): ProjectMemory 
   }
 }
 
-type LiveSession = { sessionId: string; cwd: string }
-
-/** The live-session registry: sessions/*.json, one file per running CLI process. */
-function readLiveSessions(configRoot: string): LiveSession[] {
-  const sessionsDir = join(configRoot, 'sessions')
-  let files: string[]
-  try {
-    files = readdirSync(sessionsDir)
-  } catch {
-    return []
-  }
-  const sessions: LiveSession[] = []
-  for (const file of files) {
-    if (!file.endsWith('.json')) continue
-    try {
-      const record = JSON.parse(readFileSync(join(sessionsDir, file), 'utf8')) as {
-        sessionId?: string
-        cwd?: string
-        status?: string
-      }
-      // Observed status vocabulary: "busy" / "idle" — both mean the process is up.
-      if (typeof record.sessionId === 'string' && typeof record.cwd === 'string' && typeof record.status === 'string') {
-        sessions.push({ sessionId: record.sessionId, cwd: record.cwd })
-      }
-    } catch {
-      // skip malformed registry files
-    }
-  }
-  return sessions
-}
-
 function listProjectDirs(configRoot: string): string[] {
   try {
     return readdirSync(join(configRoot, 'projects'), { withFileTypes: true })
@@ -271,8 +241,4 @@ function projectDirSlug(cwd: string): string {
 
 function lastPathSegment(p: string): string {
   return p.split(/[\\/]/).filter(Boolean).at(-1) ?? p
-}
-
-function totalTokens(totals: { inputTokens: number; outputTokens: number; cacheWrite5m: number; cacheWrite1h: number; cacheRead: number }): number {
-  return totals.inputTokens + totals.outputTokens + totals.cacheWrite5m + totals.cacheWrite1h + totals.cacheRead
 }

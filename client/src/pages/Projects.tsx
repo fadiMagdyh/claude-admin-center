@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { ProjectDetailResponse, ProjectRow, ProjectsResponse } from 'shared'
 import { AdvisorPanel, type AdvisorTarget } from '../components/AdvisorPanel'
+import { AskButton } from '../components/AskButton'
 import { SparkIcon } from '../components/SparkIcon'
+import { formatCost, formatTokens, formatWhen } from '../lib/format'
+import { useFetchJson } from '../lib/useFetchJson'
 
 export function Projects() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -231,68 +234,3 @@ function ProjectBadges({ project }: { project: ProjectRow }) {
   )
 }
 
-function AskButton({
-  title,
-  target,
-  onAsk
-}: {
-  title: string
-  target: AdvisorTarget
-  onAsk: (target: AdvisorTarget) => void
-}) {
-  return (
-    <button
-      className="hud-ask"
-      aria-label={`Ask Claude about ${title}`}
-      onClick={(event) => {
-        event.stopPropagation()
-        onAsk(target)
-      }}
-    >
-      <SparkIcon />
-    </button>
-  )
-}
-
-function useFetchJson<T>(url: string): T | null {
-  const [data, setData] = useState<T | null>(null)
-  useEffect(() => {
-    let cancelled = false
-    setData(null)
-    fetch(url)
-      .then((res) => (res.ok ? (res.json() as Promise<T>) : null))
-      .then((body) => {
-        if (!cancelled && body) setData(body)
-      })
-      .catch(() => {
-        // API down — the page keeps its loading note.
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [url])
-  return data
-}
-
-function formatWhen(epochMs: number | null): string {
-  if (!epochMs) return '—'
-  const ageMs = Date.now() - epochMs
-  if (ageMs < 3_600_000) return `${Math.max(1, Math.round(ageMs / 60_000))}m ago`
-  if (ageMs < 86_400_000) return `${Math.round(ageMs / 3_600_000)}h ago`
-  if (ageMs < 172_800_000) return 'yesterday'
-  return new Date(epochMs).toLocaleDateString([], { month: 'short', day: 'numeric' })
-}
-
-function formatTokens(tokens: number): string {
-  if (tokens >= 1e9) return `${(tokens / 1e9).toFixed(1)}B`
-  if (tokens >= 1e6) return `${(tokens / 1e6).toFixed(1)}M`
-  if (tokens >= 1e3) return `${(tokens / 1e3).toFixed(1)}K`
-  return String(tokens)
-}
-
-/** The Unpriced policy: unpriced Turns are excluded from dollars and surfaced as a count. */
-function formatCost(costUsd: number | null, unpricedTurns: number): string {
-  if (costUsd === null && unpricedTurns === 0) return '—'
-  const dollars = `$${(costUsd ?? 0).toFixed(2)}`
-  return unpricedTurns > 0 ? `≥ ${dollars} + ${unpricedTurns} unpriced` : dollars
-}

@@ -86,3 +86,12 @@ export function ledgerDb(): LedgerDb {
   }
   return handle
 }
+
+/** ledgerDb(), or null when the Ledger cannot be opened — routes degrade instead of failing. */
+export function tryLedgerDb(): LedgerDb | null {
+  try {
+    return ledgerDb()
+  } catch {
+    return null
+  }
+}

@@ -110,6 +110,64 @@ export type ProjectDetailResponse = {
   memory: ProjectMemory | null
 }
 
+/** One Session in the Sessions list: a Ledger record enriched with liveness and its project. */
+export type SessionRow = {
+  sessionId: string
+  title: string | null
+  /** Last path segment of the Session's cwd; null when the Ledger recorded no cwd. */
+  projectName: string | null
+  cwd: string | null
+  live: boolean
+  /** Transcript was garbage-collected — the Ledger record is all that remains. */
+  transcriptGone: boolean
+  firstTs: string | null
+  lastTs: string | null
+  /** First→last Turn span in ms; null when timestamps are missing. */
+  durationMs: number | null
+  agentRuns: number
+  turns: number
+  tokens: number
+  costUsd: number | null
+  unpricedTurns: number
+  /** Distinct raw model ids used in this Session. */
+  models: string[]
+}
+
+export type SessionsResponse = {
+  /** Matching Ledger Sessions before the limit was applied. */
+  total: number
+  liveCount: number
+  /** Sessions surviving only as Ledger records (transcript garbage-collected). */
+  ledgerOnlyCount: number
+  sessions: SessionRow[]
+}
+
+/** One Agent Run inside a Session's detail, with its own Turn rollup. */
+export type SessionAgentRunRow = {
+  agentId: string
+  agentType: string | null
+  description: string | null
+  turns: number
+  tokens: number
+  costUsd: number | null
+  unpricedTurns: number
+}
+
+/** Per-model rollup within one Session. */
+export type SessionModelRow = {
+  model: string
+  turns: number
+  tokens: number
+  costUsd: number | null
+  unpricedTurns: number
+}
+
+export type SessionDetailResponse = {
+  session: SessionRow
+  models: SessionModelRow[]
+  agentRuns: SessionAgentRunRow[]
+}
+
 export type OverviewResponse = {
   configRoot: string
   projects: {
