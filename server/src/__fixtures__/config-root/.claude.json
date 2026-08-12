@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "D:/fixture/alpha": {
+      "lastCost": 2.5,
+      "lastSessionId": "sid-alpha",
+      "mcpServers": {
+        "github": { "type": "stdio", "command": "npx", "args": ["-y", "github-mcp"] }
+      }
+    },
+    "D:/fixture/beta": {
+      "lastCost": 9.25,
+      "lastSessionId": "sid-beta"
+    },
+    "D:/fixture/gamma": {
+      "allowedTools": []
+    }
+  }
+}

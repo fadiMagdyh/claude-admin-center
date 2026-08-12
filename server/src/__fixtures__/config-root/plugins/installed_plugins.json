@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "plugins": {
+    "mattpocock-skills@claude-plugins-official": [
+      {
+        "scope": "user",
+        "version": "1.2.3",
+        "installedAt": "2026-08-04T10:47:50.308Z"
+      }
+    ]
+  }
+}
