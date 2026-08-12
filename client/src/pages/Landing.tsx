@@ -3,6 +3,7 @@ import type { OverviewResponse, OverviewSystem } from 'shared'
 import { AdvisorPanel } from '../components/AdvisorPanel'
 import { SparkIcon } from '../components/SparkIcon'
 import { SpendGauge } from '../components/SpendGauge'
+import { formatCost } from '../lib/format'
 
 const SYSTEM_KIND_LABEL: Record<OverviewSystem['kind'], string> = {
   'mcp-local': 'MCP · LOCAL',
@@ -79,7 +80,7 @@ export function Landing({ overview }: { overview: OverviewResponse | null }) {
             <h3 className="hud-h">
               Model loadout <span className="dim">// 14d</span>
             </h3>
-            <p className="hud-note">AWAITING LEDGER — model spend lands with the ledger build.</p>
+            <ModelLoadout models={overview?.models ?? []} />
           </div>
           <div className="hud-mod">
             <h3 className="hud-h">
@@ -103,6 +104,28 @@ export function Landing({ overview }: { overview: OverviewResponse | null }) {
       </div>
 
       {advisorOpen && <AdvisorPanel onClose={() => setAdvisorOpen(false)} />}
+    </>
+  )
+}
+
+/** 14d per-Model spend bars ([1m] collapsed server-side), scaled to the top Model. */
+function ModelLoadout({ models }: { models: OverviewResponse['models'] }) {
+  if (models.length === 0) return <p className="hud-note">NO LEDGER DATA — model spend lands after the first sweep.</p>
+  const maxCost = Math.max(...models.map((m) => m.costUsd ?? 0))
+  return (
+    <>
+      {models.map((m) => (
+        <div className="hud-row" key={m.model} title={m.model}>
+          <span className="pn">
+            {m.model.replace(/^claude-/, '')}
+            {m.longContext ? ' [1M]' : ''}
+          </span>
+          <div>
+            <div className="hud-bar" style={{ width: `${maxCost > 0 ? (((m.costUsd ?? 0) / maxCost) * 100).toFixed(0) : 0}%` }} />
+          </div>
+          <span className="pv">{formatCost(m.costUsd, m.unpricedTurns)}</span>
+        </div>
+      ))}
     </>
   )
 }

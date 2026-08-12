@@ -168,6 +168,16 @@ export type SessionDetailResponse = {
   agentRuns: SessionAgentRunRow[]
 }
 
+/** One Model in the landing loadout: 14d Ledger rollup, [1m] collapsed into the base Model. */
+export type OverviewModel = {
+  /** Base model id. */
+  model: string
+  costUsd: number | null
+  unpricedTurns: number
+  /** Some collapsed Turns used the [1m] long-context variant. */
+  longContext: boolean
+}
+
 export type OverviewResponse = {
   configRoot: string
   projects: {
@@ -184,4 +194,62 @@ export type OverviewResponse = {
   tokens14d: number | null
   sessions14d: number | null
   cachePct: number | null
+  /** Model loadout over the last 14 days, highest cost first; empty when the Ledger is empty. */
+  models: OverviewModel[]
+}
+
+export type UsageRange = '7' | '14' | '30' | 'all'
+
+/** The Usage section's stat tiles, scoped to the requested range (Ledger span excepted). */
+export type UsageTiles = {
+  /** Dollar sum of priced Turns only (Unpriced policy); null when none were priced. */
+  costUsd: number | null
+  unpricedTurns: number
+  tokens: number
+  sessions: number
+  /** Cache reads as a percentage of all input-side tokens. */
+  cachePct: number
+  /** Whole days between the Ledger's oldest and newest Turn, inclusive — the full history span. */
+  historyDays: number
+}
+
+/** One stacked-bar segment: a base Model's priced spend on one day. */
+export type UsageDayModel = {
+  model: string
+  cost: number
+  unpricedTurns: number
+}
+
+/** One local-calendar day of the chart; days with no Turns are zero-filled for a continuous axis. */
+export type UsageDay = {
+  /** YYYY-MM-DD in the server's local timezone. */
+  day: string
+  perModel: UsageDayModel[]
+  /** Priced spend summed across Models. */
+  total: number
+}
+
+/** Per-Model rollup for the range, [1m] collapsed into the base Model, highest cost first. */
+export type UsageModelRow = {
+  model: string
+  longContext: boolean
+  turns: number
+  inputTokens: number
+  outputTokens: number
+  cacheRead: number
+  /** 5m + 1h cache writes combined. */
+  cacheWrite: number
+  /** All token buckets summed. */
+  tokens: number
+  costUsd: number | null
+  unpricedTurns: number
+}
+
+export type UsageResponse = {
+  range: UsageRange
+  tiles: UsageTiles
+  days: UsageDay[]
+  models: UsageModelRow[]
+  /** Unpriced policy summary: Turns excluded from dollar totals and the base Models they came from. */
+  unpriced: { turns: number; models: string[] }
 }

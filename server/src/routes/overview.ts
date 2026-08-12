@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Hono } from 'hono'
-import type { OverviewActivityEntry, OverviewResponse, OverviewSystem } from 'shared'
+import type { OverviewActivityEntry, OverviewModel, OverviewResponse, OverviewSystem } from 'shared'
 import { ledgerDb } from '../ledger/db.js'
-import { ledgerStatus, overviewNumbers } from '../ledger/queries.js'
+import { ledgerStatus, modelTotals, overviewNumbers } from '../ledger/queries.js'
 import { readRegistry } from '../readers/claudeJson.js'
 import { resolveConfigRoot } from '../readers/configRoot.js'
 
@@ -25,14 +25,15 @@ overview.get('/', (c) => {
     spend14d: ledger.spend14d,
     tokens14d: ledger.tokens14d,
     sessions14d: ledger.sessions14d,
-    cachePct: ledger.cachePct
+    cachePct: ledger.cachePct,
+    models: ledger.models
   }
   return c.json(body)
 })
 
-type LedgerFields = Pick<OverviewResponse, 'spend14d' | 'tokens14d' | 'sessions14d' | 'cachePct'> & { system: OverviewSystem }
+type LedgerFields = Pick<OverviewResponse, 'spend14d' | 'tokens14d' | 'sessions14d' | 'cachePct' | 'models'> & { system: OverviewSystem }
 
-const LEDGER_NULLS = { spend14d: null, tokens14d: null, sessions14d: null, cachePct: null }
+const LEDGER_NULLS = { spend14d: null, tokens14d: null, sessions14d: null, cachePct: null, models: [] }
 
 /** Landing readouts from the Ledger; nulls when it is empty or unavailable. */
 function ledgerFields(): LedgerFields {
@@ -41,10 +42,20 @@ function ledgerFields(): LedgerFields {
     const status = ledgerStatus(db)
     const system: OverviewSystem = { name: 'ledger', kind: 'ledger', on: true, status: `${status.turns} TURNS` }
     if (status.turns === 0) return { system, ...LEDGER_NULLS }
-    return { system, ...overviewNumbers(db) }
+    return { system, ...overviewNumbers(db), models: loadoutModels(db) }
   } catch {
     return { system: { name: 'ledger', kind: 'ledger', on: false, status: 'OFFLINE' }, ...LEDGER_NULLS }
   }
+}
+
+/** The model-loadout module rows: 14d per-Model spend, [1m] collapsed, highest first. */
+function loadoutModels(db: ReturnType<typeof ledgerDb>): OverviewModel[] {
+  return modelTotals(db, 14).map((model) => ({
+    model: model.model,
+    costUsd: model.costUsd,
+    unpricedTurns: model.unpricedTurns,
+    longContext: model.longContext
+  }))
 }
 
 function lastPathSegment(p: string): string {

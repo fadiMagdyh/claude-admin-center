@@ -12,7 +12,8 @@ const overview: OverviewResponse = {
   spend14d: null,
   tokens14d: null,
   sessions14d: null,
-  cachePct: null
+  cachePct: null,
+  models: []
 }
 
 function renderApp() {
