@@ -364,6 +364,164 @@ h1, h2, h3 {
   color: var(--ink);
 }
 
+/* ---------- section pages: dense tables, badges, KPI strip ---------- */
+.hud-page {
+  max-width: 1240px;
+  margin: 26px auto 0;
+  padding: 0 24px;
+}
+.hud-strip {
+  display: flex;
+  gap: 26px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.hud-strip b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.hud-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.hud-table th {
+  text-align: left;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--cyan-line);
+}
+.hud-table td {
+  padding: 5px 10px;
+  border-bottom: 1px solid rgba(56, 214, 245, 0.09);
+  white-space: nowrap;
+}
+.hud-table .num {
+  text-align: right;
+}
+.hud-table .pname {
+  color: var(--ink);
+  font-weight: 600;
+}
+.hud-table .ppath {
+  color: var(--muted);
+  font-size: 11px;
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hud-table tr.click {
+  cursor: pointer;
+}
+.hud-table tr.click:hover td {
+  background: rgba(56, 214, 245, 0.06);
+}
+.hud-badge {
+  display: inline-block;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 1px 7px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  margin-left: 7px;
+  vertical-align: 1px;
+}
+.hud-badge.live {
+  color: var(--good-text);
+}
+.hud-badge.orphan {
+  color: #ec835a;
+}
+.hud-badge.gc {
+  color: var(--muted);
+  border-style: dashed;
+}
+.hud-ask {
+  color: var(--cyan);
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  line-height: 0;
+}
+.hud-ask:hover {
+  border-color: var(--cyan-line);
+  box-shadow: 0 0 10px rgba(56, 214, 245, 0.3);
+}
+.hud-ask-wide {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 7px 12px;
+  color: var(--cyan);
+  border: 1px solid var(--cyan-line);
+}
+.hud-ask-wide:hover {
+  box-shadow: 0 0 14px rgba(56, 214, 245, 0.35), inset 0 0 10px rgba(56, 214, 245, 0.1);
+}
+.hud-back {
+  display: inline-block;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  margin-bottom: 10px;
+}
+.hud-detailhead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+.hud-detailhead h2 {
+  font-size: 18px;
+  letter-spacing: 0.06em;
+}
+.hud-enab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 2px;
+  font-size: 12px;
+  border-bottom: 1px solid rgba(56, 214, 245, 0.09);
+}
+.hud-enab:last-child {
+  border-bottom: none;
+}
+.hud-enab .kind {
+  color: var(--muted);
+  font-size: 10.5px;
+}
+.hud-enab .scope {
+  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.hud-dot-on,
+.hud-dot-off {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.hud-dot-on {
+  background: var(--good-text);
+  box-shadow: 0 0 8px rgba(47, 224, 138, 0.7);
+}
+.hud-dot-off {
+  background: transparent;
+  border: 1.5px solid var(--muted);
+}
+
 /* ---------- section page stub ---------- */
 .hud-stub {
   max-width: 720px;

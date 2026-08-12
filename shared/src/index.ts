@@ -31,6 +31,85 @@ export type OverviewActivityEntry = {
   project: string
 }
 
+/** Ledger rollup of the last 30 days for one Project; null when the Ledger is unavailable. */
+export type ProjectLedger30d = {
+  sessions: number
+  tokens: number
+  /** Dollar sum of priced Turns only (Unpriced policy); null when none were priced. */
+  costUsd: number | null
+  unpricedTurns: number
+} | null
+
+/** One Project in the list: a Registry entry joined with disk state, or an Orphaned Project. */
+export type ProjectRow = {
+  /** Last path segment of the cwd (or the directory slug for an Orphaned Project). */
+  name: string
+  /** The Registry key (cwd); for an Orphaned Project the on-disk directory slug. */
+  path: string
+  orphaned: boolean
+  /** A projects/<slug> directory exists for this Registry entry. */
+  onDisk: boolean
+  /** A Live Session is currently running in this cwd. */
+  live: boolean
+  lastCost: number | null
+  lastSessionId: string | null
+  /** Epoch ms of the latest known activity (registry lastStartTime vs newest Ledger Turn). */
+  lastActiveMs: number | null
+  /** Total tokens of the last session (all buckets), from the Registry entry. */
+  lastTokens: number | null
+  mcpServerCount: number
+  /** Plugins this project's own settings files enable. */
+  enabledPluginCount: number
+  ledger30d: ProjectLedger30d
+}
+
+export type ProjectsResponse = {
+  registryCount: number
+  orphanCount: number
+  /** Live Sessions currently registered, across all projects. */
+  liveCount: number
+  projects: ProjectRow[]
+}
+
+/** One Session on a Project's detail page. Agent Runs' usage is rolled up into it. */
+export type ProjectSessionRow = {
+  sessionId: string
+  title: string | null
+  /** ISO timestamp of the session's newest record. */
+  lastTs: string | null
+  live: boolean
+  /** Transcript was garbage-collected — the Ledger record is all that remains. */
+  transcriptGone: boolean
+  agentRuns: number
+  turns: number
+  tokens: number
+  costUsd: number | null
+  unpricedTurns: number
+}
+
+export type EnablementRow = {
+  name: string
+  kind: 'plugin' | 'mcp'
+  on: boolean
+  scope: 'global' | 'this project' | 'overridden here'
+}
+
+/** Pointer to a Project's memory directory in the config root. */
+export type ProjectMemory = {
+  hasMemoryMd: boolean
+  fileCount: number
+  lastModifiedMs: number | null
+}
+
+export type ProjectDetailResponse = {
+  project: ProjectRow
+  sessions: ProjectSessionRow[]
+  /** Effective Enablement: global settings + this project's overrides, resolved. */
+  enablement: EnablementRow[]
+  /** null when the project has no memory directory. */
+  memory: ProjectMemory | null
+}
+
 export type OverviewResponse = {
   configRoot: string
   projects: {

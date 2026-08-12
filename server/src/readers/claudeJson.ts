@@ -5,7 +5,16 @@ import { join } from 'node:path'
 export type RegistryProject = {
   lastCost?: number
   lastSessionId?: string
+  /** Epoch ms. */
+  lastStartTime?: number
+  lastTotalInputTokens?: number
+  lastTotalOutputTokens?: number
+  lastTotalCacheCreationInputTokens?: number
+  lastTotalCacheReadInputTokens?: number
   mcpServers?: Record<string, { type?: string; command?: string }>
+  enabledMcpjsonServers?: string[]
+  disabledMcpjsonServers?: string[]
+  disabledMcpServers?: string[]
 }
 
 type ClaudeJson = {

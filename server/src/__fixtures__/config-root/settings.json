@@ -1,0 +1,7 @@
+{
+  "model": "claude-fable-5",
+  "enabledPlugins": {
+    "fixture-skills@fixture-marketplace": true,
+    "fixture-lint@fixture-marketplace": false
+  }
+}
