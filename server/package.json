@@ -13,7 +13,9 @@
     "better-sqlite3": "^13.0.3",
     "chokidar": "^5.0.0",
     "hono": "^4.13.1",
-    "shared": "*"
+    "p-queue": "^9.3.3",
+    "shared": "*",
+    "tree-kill": "^1.2.2"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",

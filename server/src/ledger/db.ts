@@ -9,7 +9,8 @@ export type LedgerDb = Database.Database
 const serverPackageDir = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 
 /**
- * The locked four-table schema from issue #7. Turns are the storage grain;
+ * The locked four-table Ledger schema from issue #7, plus the two Advisor
+ * tables from issue #8 (same DB by design). Turns are the storage grain;
  * (session_id, uuid) is a global dedup key, so INSERT OR IGNORE makes every
  * Sweep idempotent. Rows are never deleted — sessions whose transcript was
  * garbage-collected are only flagged transcript_gone.
@@ -59,6 +60,32 @@ CREATE TABLE IF NOT EXISTS ingest_files (
   mtime_ms    INTEGER NOT NULL,
   byte_offset INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS advisor_runs (
+  run_id       TEXT PRIMARY KEY,
+  object_type  TEXT NOT NULL,
+  object_key   TEXT NOT NULL,
+  model        TEXT NOT NULL,
+  status       TEXT NOT NULL, -- queued|running|ok|error|timeout|cancelled
+  requested_at TEXT NOT NULL,
+  finished_at  TEXT,
+  cost_usd     REAL,          -- the CLI's client-side estimate, display only
+  error        TEXT,
+  context_hash TEXT NOT NULL, -- sha256 of the assembled context: the "input unchanged" comparator
+  raw_result   TEXT           -- the structured output JSON as returned
+);
+
+CREATE INDEX IF NOT EXISTS advisor_runs_object ON advisor_runs (object_type, object_key, requested_at);
+
+CREATE TABLE IF NOT EXISTS recommendations (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id   TEXT NOT NULL,
+  severity TEXT NOT NULL,
+  finding  TEXT NOT NULL,
+  action   TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS recommendations_run ON recommendations (run_id);
 `
 
 export function defaultLedgerDbPath(): string {

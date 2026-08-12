@@ -363,6 +363,113 @@ h1, h2, h3 {
 .hud-adv .x:hover {
   color: var(--ink);
 }
+.hud-adv-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 0;
+}
+.hud-ask-wide:disabled {
+  opacity: 0.45;
+  cursor: default;
+  box-shadow: none;
+}
+.hud-badge.unchanged {
+  color: var(--good-text);
+  margin: 0 0 8px;
+}
+.hud-note.err {
+  color: #ec835a;
+}
+.hud-spin {
+  display: inline-block;
+  line-height: 0;
+  vertical-align: -2px;
+  animation: hud-rot 1.1s linear infinite;
+}
+.hud-adv-cancel {
+  margin-left: 10px;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: #ec835a;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.hud-adv-skel div {
+  height: 10px;
+  margin: 8px 0;
+  background: linear-gradient(90deg, rgba(56, 214, 245, 0.06), rgba(56, 214, 245, 0.18), rgba(56, 214, 245, 0.06));
+  background-size: 200% 100%;
+  animation: hud-shimmer 1.4s linear infinite;
+}
+@keyframes hud-shimmer {
+  to { background-position: -200% 0; }
+}
+.hud-adv-summary {
+  font-size: 12px;
+  color: var(--ink2);
+  margin: 10px 0;
+}
+/* Recommendation cards — severity colors: warning=serious, suggestion=warn, info=good. */
+.hud-rec {
+  border: 1px solid rgba(56, 214, 245, 0.14);
+  border-left: 3px solid var(--cyan);
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.hud-rec .sev {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.hud-rec .finding {
+  color: var(--ink);
+  margin: 3px 0;
+}
+.hud-rec .action {
+  color: var(--ink2);
+  font-size: 11.5px;
+}
+.hud-rec.warning {
+  border-left-color: #ec835a;
+}
+.hud-rec.warning .sev {
+  color: #ec835a;
+}
+.hud-rec.suggestion {
+  border-left-color: #c98500;
+}
+.hud-rec.suggestion .sev {
+  color: #c98500;
+}
+.hud-rec.info {
+  border-left-color: var(--good-text);
+}
+.hud-rec.info .sev {
+  color: var(--good-text);
+}
+.hud-adv-hist h4 {
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 12px 0 4px;
+}
+.hud-adv-hist .row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--ink2);
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(56, 214, 245, 0.08);
+}
+.hud-adv-hist .row .num {
+  text-align: right;
+}
 
 /* ---------- section pages: dense tables, badges, KPI strip ---------- */
 .hud-page {

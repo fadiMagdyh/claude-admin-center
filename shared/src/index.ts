@@ -419,3 +419,55 @@ export type ModelsResponse = {
   /** Unpriced policy summary: Turns excluded from dollar totals and the base Models they came from. */
   unpriced: { turns: number; models: string[] }
 }
+
+// ---------- Advisor ----------
+
+/** What an Advisor Run can be asked about; 'overview' is the landing orb's whole-setup sweep. */
+export type AdvisorObjectType = 'project' | 'session' | 'skill' | 'plugin' | 'mcp' | 'model' | 'overview'
+
+/** Model alias the spawned headless Claude runs on. */
+export type AdvisorRunModel = 'haiku' | 'sonnet' | 'opus'
+
+export type RecommendationSeverity = 'info' | 'suggestion' | 'warning'
+
+/** One finding produced by an Advisor Run: persisted with its run, rendered inline on the object. */
+export type Recommendation = {
+  severity: RecommendationSeverity
+  finding: string
+  action: string
+}
+
+/** The structured output contract enforced on the spawned Claude via --json-schema. */
+export type AdvisorOutput = {
+  summary: string
+  recommendations: Recommendation[]
+}
+
+export type AdvisorRunStatus = 'queued' | 'running' | 'ok' | 'error' | 'timeout' | 'cancelled'
+
+/** One Advisor Run from request to persisted outcome. */
+export type AdvisorRun = {
+  runId: string
+  objectType: AdvisorObjectType
+  objectKey: string
+  model: AdvisorRunModel
+  status: AdvisorRunStatus
+  /** ISO timestamps. */
+  requestedAt: string
+  finishedAt: string | null
+  /** The CLI's client-side estimate (total_cost_usd) — Ledger pricing stays canonical. */
+  costUsd: number | null
+  error: string | null
+  /** From the structured output; null unless status is ok. */
+  summary: string | null
+  recommendations: Recommendation[]
+}
+
+export type AdvisorRunCreated = { runId: string }
+
+export type AdvisorHistoryResponse = {
+  /** Newest first; `latest` marks the most recent run. */
+  runs: Array<AdvisorRun & { latest: boolean }>
+  /** The latest ok run's context_hash matches the context assembled right now. */
+  inputUnchanged: boolean
+}

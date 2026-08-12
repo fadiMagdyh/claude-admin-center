@@ -28,6 +28,7 @@ Print mode is built for spawn-analyze-exit runs: one subprocess, no persistent l
 
 - **`--no-session-persistence`** skips writing the transcript entirely — advisor runs leave no trace in the data the dashboard displays. Recommended default.
 - **`--bare`** additionally skips hooks, plugins, skills, MCP servers, CLAUDE.md and project settings — reproducible advisor behavior independent of the user's setup. Caveat: docs pair `--bare` with `ANTHROPIC_API_KEY` (no OAuth); verify locally whether bare mode works with the existing OAuth login before committing to it — if not, drop `--bare` and keep `--no-session-persistence` + a dedicated cwd.
+  - **Verified 2026-08-12 (advisor build, #19):** `--bare` with OAuth login fails — `claude -p "say ok" --bare …` exits 1 with `"Not logged in · Please run /login"` (`terminal_reason: api_error`); the flag's own help confirms auth is strictly `ANTHROPIC_API_KEY`/apiKeyHelper in bare mode. Dropped per the fallback; the advisor uses `--no-session-persistence` + read-only tool allowlist. `--permission-mode dontAsk` verified as a valid choice in `claude --help`.
 - A separate `CLAUDE_CONFIG_DIR` is NOT recommended: credentials aren't shared across config dirs and it just relocates the pollution.
 
 ## 6. Model, latency, cost, concurrency
