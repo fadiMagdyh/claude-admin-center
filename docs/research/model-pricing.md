@@ -83,6 +83,17 @@ Lookup order, first hit wins: exact raw id → strip `[1m]` suffix → strip tra
 
 Design notes: `prices` is a dated array — pick latest `effective_from` ≤ record timestamp (handles price changes/introductory pricing). Cache prices stored absolute, not derived, so hand-edits can't desync. `match` regexes encode normalization in editable data. `long_context` stays `null` until a premium tier ever exists (`{threshold_input_tokens, input, output, …}`).
 
+## Addendum (2026-08-12, ticket #20)
+
+Two models observed in real transcripts were missing from the table above; verified against the same pricing doc (fetched 2026-08-12) and added to `server/prices.json`:
+
+| Transcript model id | Input | Output | Cache write 5m | Cache write 1h | Cache read |
+|---|---|---|---|---|---|
+| `claude-opus-5` / `claude-opus-5[1m]` | 5.00 | 25.00 | 6.25 | 10.00 | 0.50 |
+| `claude-sonnet-5` / `claude-sonnet-5[1m]` | 2.00 | 10.00 | 2.50 | 4.00 | 0.20 |
+
+Note: Sonnet 5's $2/$10 launched as introductory pricing through 2026-08-31, but the pricing doc now states it **is the permanent price** — the scheduled increase to $3/$15 will not occur, so a single dated entry suffices. `<synthetic>` ids in transcripts are error-record noise and stay correctly Unpriced.
+
 ## 6. Cost formula per usage record (tokens ÷ 1,000,000)
 
 ```
