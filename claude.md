@@ -34,6 +34,8 @@ Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/do
 
 ### Lessons Learned
 
+* 2026-08-12: an agent pushed real usage/spend dollar figures into a commit message on this PUBLIC repo (scrubbed by amend + force-push). The dashboard's data (costs, tokens, session titles, paths) is personal — never paste real numbers or transcript content into commits, issues, or PRs; keep verification figures in local output only.
+
 
 
 
